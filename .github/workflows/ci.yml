@@ -1,0 +1,50 @@
+name: CI
+
+on:
+  push:
+    branches: ["**"]
+  pull_request:
+    branches: ["**"]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    env:
+      VECTRAS_FAKE_OPENAI: "1"
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install uv (package manager)
+        shell: bash
+        run: |
+          curl -LsSf https://astral.sh/uv/install.sh | sh
+          echo "$HOME/.local/bin" >> $GITHUB_PATH
+          echo "$HOME/.cargo/bin" >> $GITHUB_PATH
+
+      - name: Show versions
+        run: |
+          python --version
+          uv --version
+
+      - name: Install project dependencies
+        run: uv sync --frozen
+
+      - name: Ensure scripts are executable
+        run: chmod +x tools/lint.sh test.sh start.sh stop.sh
+
+      - name: Lint
+        run: ./tools/lint.sh
+        env:
+          UV_NO_SYNC: "1"
+
+      - name: Tests
+        run: ./test.sh all
+
+
