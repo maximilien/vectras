@@ -3,6 +3,7 @@ from typing import Any
 
 import httpx
 from fastapi import FastAPI
+from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 
 
@@ -75,7 +76,7 @@ async def _llm_answer(query: str) -> str:
         organization=os.getenv("OPENAI_ORG_ID") or None,
     )
     completion = await client.chat.completions.create(
-        model=os.getenv("OPENAI_MODEL", "gpt5-mini"),
+        model=os.getenv("OPENAI_MODEL", "gpt-4o-mini"),
         messages=[
             {"role": "system", "content": "You are a helpful assistant."},
             {"role": "user", "content": query},
@@ -87,6 +88,15 @@ async def _llm_answer(query: str) -> str:
 
 def create_app() -> FastAPI:
     app = FastAPI(title="Vectras Agent", description="Agent with query interface", version="0.1.0")
+
+    # Enable CORS for frontend communication
+    app.add_middleware(
+        CORSMiddleware,
+        allow_origins=["*"],  # In production, specify exact origins
+        allow_credentials=True,
+        allow_methods=["*"],
+        allow_headers=["*"],
+    )
 
     @app.get("/health")
     async def health():

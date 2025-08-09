@@ -212,3 +212,7 @@ __marimo__/
 .prompts.txt
 logs/
 TODOs.md
+
+# Node.js dependencies
+node_modules/
+package-lock.json

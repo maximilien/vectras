@@ -1,0 +1,46 @@
+# Vectras Agents Configuration
+# This file defines the available agents and their configurations
+
+agents:
+  - id: "agent-1"
+    name: "Vectras Agent"
+    description: "Default Vectras agent with query capabilities and backend health monitoring"
+    enabled: true
+    model: "gpt-4o-mini"
+    temperature: 0.2
+    max_tokens: 1000
+    system_prompt: "You are a helpful assistant for the Vectras platform."
+    capabilities:
+      - "Chat"
+      - "Backend Health Check"
+      - "System Status"
+    endpoint: "/query"
+    tags:
+      - "default"
+      - "health"
+
+  - id: "agent-2"
+    name: "Code Assistant"
+    description: "Specialized agent for code review, debugging, and programming assistance"
+    enabled: false
+    model: "gpt-4o-mini"
+    temperature: 0.1
+    max_tokens: 2000
+    system_prompt: "You are an expert programming assistant. Help with code review, debugging, and best practices."
+    capabilities:
+      - "Code Review"
+      - "Debugging"
+      - "Best Practices"
+      - "Documentation"
+    endpoint: "/query"
+    tags:
+      - "development"
+      - "coding"
+
+# Global settings
+settings:
+  default_model: "gpt-4o-mini"
+  default_temperature: 0.2
+  default_max_tokens: 1000
+  api_timeout: 30
+  enable_logging: true

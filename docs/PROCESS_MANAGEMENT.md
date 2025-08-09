@@ -11,10 +11,11 @@ Ports can be controlled via `.env`:
 - `VECTRAS_API_PORT` (default 8121)
 - `VECTRAS_MCP_PORT` (default 8122)
 - `VECTRAS_AGENT_PORT` (default 8123)
+- `VECTRAS_UI_PORT` (default 8120)
 
 Additionally, the agent can use OpenAI if configured:
 
 - `OPENAI_API_KEY` (required for real OpenAI calls)
-- `OPENAI_MODEL` (optional, default `gpt5-mini`)
+- `OPENAI_MODEL` (optional, default `gpt-4o-mini`)
 
 

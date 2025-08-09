@@ -1,0 +1,81 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Vectras</title>
+    <link rel="stylesheet" href="/static/styles.css" />
+  </head>
+  <body>
+    <div id="app">
+      <header class="topbar">
+        <button id="hamburger" aria-label="menu">☰</button>
+        <div class="brand">Vectras</div>
+        <div class="spacer"></div>
+        <button id="settings" aria-label="settings">⚙️</button>
+        <div id="hamburger-menu" class="menu" aria-hidden="true" role="menu">
+          <button id="menu-new" class="menu-item" role="menuitem">➕ New chat</button>
+          <button id="menu-clear" class="menu-item" role="menuitem">🗑️ Clear chats</button>
+          <hr />
+          <button id="menu-settings" class="menu-item" role="menuitem">⚙️ Settings</button>
+        </div>
+      </header>
+
+      <div class="layout" id="layout">
+        <aside class="left-pane" id="left-pane">
+          <div class="pane-header">
+            <button id="left-toggle" class="collapse-btn" aria-controls="left-pane" aria-expanded="true" title="Collapse chats">‹</button>
+            <span>Chats</span>
+            <button id="new-chat-btn" class="new-chat-btn" title="New chat">+</button>
+          </div>
+          <ul id="chat-list" class="list"></ul>
+        </aside>
+
+        <main class="center-pane">
+          <div id="agent-card" class="agent-card hidden"></div>
+          <div id="chat" class="chat"></div>
+          <form id="composer" class="composer">
+            <input id="input" type="text" placeholder="Type a message..." autocomplete="off" />
+            <button type="submit">Send</button>
+          </form>
+        </main>
+
+        <aside class="right-pane" id="right-pane">
+          <div class="pane-header">
+            <span>Agents</span>
+            <button id="right-toggle" class="collapse-btn" aria-controls="right-pane" aria-expanded="true" title="Collapse agents">›</button>
+          </div>
+          <ul id="agent-list" class="list"></ul>
+        </aside>
+
+        <!-- Resize handles -->
+        <div id="left-resize" class="resize-handle left"></div>
+        <div id="right-resize" class="resize-handle right"></div>
+      </div>
+
+      <!-- Floating edge handles to reopen collapsed panes -->
+      <button id="left-handle" class="edge-handle" aria-label="Open chats" title="Open chats">›</button>
+      <button id="right-handle" class="edge-handle right" aria-label="Open agents" title="Open agents">‹</button>
+
+      <div id="settings-panel" class="settings-panel" aria-hidden="true">
+        <div class="settings-header">
+          <strong>Settings</strong>
+          <button id="settings-close" aria-label="close">✕</button>
+        </div>
+        <div class="settings-body">
+          <div class="hint">Configure your environment in .env. This panel is a placeholder.</div>
+          <ul class="kv">
+            <li><span>UI</span><span>localhost:8120</span></li>
+            <li><span>Agent</span><span>localhost:8123</span></li>
+            <li><span>API</span><span>localhost:8121</span></li>
+            <li><span>MCP</span><span>localhost:8122</span></li>
+          </ul>
+        </div>
+      </div>
+    </div>
+
+    <script src="/static/app.js"></script>
+  </body>
+  </html>
+
+
