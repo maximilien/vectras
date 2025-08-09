@@ -5,6 +5,10 @@
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>Vectras</title>
     <link rel="stylesheet" href="/static/styles.css" />
+    <!-- Prism.js for syntax highlighting -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/themes/prism-tomorrow.min.css" />
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-core.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/plugins/autoloader/prism-autoloader.min.js"></script>
   </head>
   <body>
     <div id="app">
@@ -59,17 +63,85 @@
 
       <div id="settings-panel" class="settings-panel" aria-hidden="true">
         <div class="settings-header">
-          <strong>Settings</strong>
+          <strong>System Status</strong>
           <button id="settings-close" aria-label="close">✕</button>
         </div>
         <div class="settings-body">
-          <div class="hint">Configure your environment in .env. This panel is a placeholder.</div>
-          <ul class="kv">
-            <li><span>UI</span><span>localhost:8120</span></li>
-            <li><span>Agent</span><span>localhost:8123</span></li>
-            <li><span>API</span><span>localhost:8121</span></li>
-            <li><span>MCP</span><span>localhost:8122</span></li>
-          </ul>
+          <div class="status-section">
+            <h3>🖥️ Core Services</h3>
+            <div class="service-group" id="core-services">
+              <div class="service-item">
+                <span class="service-name">UI</span>
+                <span class="service-url">localhost:8120</span>
+                <span class="service-status" data-service="ui">⏳ Checking...</span>
+              </div>
+              <div class="service-item">
+                <span class="service-name">API</span>
+                <span class="service-url">localhost:8121</span>
+                <span class="service-status" data-service="api">⏳ Checking...</span>
+              </div>
+              <div class="service-item">
+                <span class="service-name">MCP</span>
+                <span class="service-url">localhost:8122</span>
+                <span class="service-status" data-service="mcp">⏳ Checking...</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="status-section">
+            <h3>🤖 Agents</h3>
+            <div class="service-group" id="agents">
+              <div class="service-item">
+                <span class="service-name">Supervisor</span>
+                <span class="service-url">localhost:8123</span>
+                <span class="service-status" data-service="supervisor">⏳ Checking...</span>
+              </div>
+              <div class="service-item">
+                <span class="service-name">Log Monitor</span>
+                <span class="service-url">localhost:8124</span>
+                <span class="service-status" data-service="log-monitor">⏳ Checking...</span>
+              </div>
+              <div class="service-item">
+                <span class="service-name">Code Fixer</span>
+                <span class="service-url">localhost:8125</span>
+                <span class="service-status" data-service="code-fixer">⏳ Checking...</span>
+              </div>
+              <div class="service-item">
+                <span class="service-name">Linting</span>
+                <span class="service-url">localhost:8127</span>
+                <span class="service-status" data-service="linting">⏳ Checking...</span>
+              </div>
+              <div class="service-item">
+                <span class="service-name">Testing</span>
+                <span class="service-url">localhost:8126</span>
+                <span class="service-status" data-service="testing">⏳ Checking...</span>
+              </div>
+              <div class="service-item">
+                <span class="service-name">GitHub</span>
+                <span class="service-url">localhost:8128</span>
+                <span class="service-status" data-service="github">⏳ Checking...</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="status-section">
+            <h3>📊 System Info</h3>
+            <div class="system-info">
+              <div class="info-item">
+                <span class="info-label">Total Services:</span>
+                <span class="info-value" id="total-services">9</span>
+              </div>
+              <div class="info-item">
+                <span class="info-label">Healthy:</span>
+                <span class="info-value" id="healthy-count">0</span>
+              </div>
+              <div class="info-item">
+                <span class="info-label">Last Check:</span>
+                <span class="info-value" id="last-check">Never</span>
+              </div>
+            </div>
+            <button id="refresh-status" class="refresh-btn">🔄 Refresh Status</button>
+          </div>
         </div>
       </div>
     </div>

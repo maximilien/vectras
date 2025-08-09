@@ -4,61 +4,80 @@ const state = {
   chats: [],
   activeChatId: null,
   chatCounter: 0,
-  agents: [
-    { 
-      id: "agent-1", 
-      name: "Vectras Agent", 
-      description: "Default Vectras agent with query capabilities and backend health monitoring",
-      model: "gpt-4o-mini",
-      temperature: 0.2,
-      systemPrompt: "You are a helpful assistant for the Vectras platform.",
-      capabilities: ["Chat", "Backend Health Check", "System Status"],
-      endpoint: "/query"
-    },
-    { 
-      id: "agent-2", 
-      name: "Code Assistant", 
-      description: "Specialized agent for code review, debugging, and programming assistance",
-      model: "gpt-4o-mini",
-      temperature: 0.1,
-      systemPrompt: "You are an expert programming assistant. Help with code review, debugging, and best practices.",
-      capabilities: ["Code Review", "Debugging", "Best Practices", "Documentation"],
-      endpoint: "/query",
-      disabled: true
-    },
-    { 
-      id: "agent-3", 
-      name: "Data Analyst", 
-      description: "Agent specialized in data analysis, visualization, and reporting",
-      model: "gpt-4o-mini",
-      temperature: 0.3,
-      systemPrompt: "You are a data analysis expert. Help with data interpretation, visualization suggestions, and reporting.",
-      capabilities: ["Data Analysis", "Visualization", "Reporting", "Statistics"],
-      endpoint: "/query",
-      disabled: true
-    }
-  ],
-  activeAgentId: "agent-1",
+  agents: [], // Will be loaded from API
+  activeAgentId: null, // Will be set to first available agent
   leftWidth: 260,
   rightWidth: 260,
+  serviceStatus: {}, // Store service health status
 };
+
+// Load agents from the API
+async function loadAgents() {
+  try {
+    const response = await fetch("/api/agents");
+    const data = await response.json();
+    
+    if (data.agents && data.agents.length > 0) {
+      state.agents = data.agents;
+      // Set first agent as active if none selected
+      if (!state.activeAgentId) {
+        state.activeAgentId = state.agents[0].id;
+      }
+    } else {
+      // Fallback to a default agent if none loaded
+      state.agents = [{
+        id: "supervisor",
+        name: "Supervisor Agent", 
+        description: "Main coordinator agent",
+        capabilities: ["Chat", "System Status"],
+        tags: ["supervisor"],
+        endpoint: "/query",
+        port: 8123
+      }];
+      state.activeAgentId = "supervisor";
+    }
+    
+    renderAgents();
+    renderAgentCard();
+  } catch (error) {
+    // eslint-disable-next-line no-console
+    console.error("Failed to load agents:", error);
+    // Use fallback agent
+    state.agents = [{
+      id: "supervisor",
+      name: "Supervisor Agent",
+      description: "Main coordinator agent", 
+      capabilities: ["Chat", "System Status"],
+      tags: ["supervisor"],
+      endpoint: "/query",
+      port: 8123
+    }];
+    state.activeAgentId = "supervisor";
+    renderAgents();
+    renderAgentCard();
+  }
+}
 
 function renderAgents() {
   const list = $("#agent-list");
   list.innerHTML = "";
   state.agents.forEach((a) => {
     const li = document.createElement("li");
+    
+    // Create tag badges
+    const tagBadges = a.tags ? a.tags.map(tag => 
+      `<span class="tag-badge">${tag}</span>`
+    ).join(" ") : "";
+    
     li.innerHTML = `
-      <div style="font-weight: 600;">${a.name}</div>
-      ${a.disabled ? "<div style=\"font-size: 12px; color: var(--muted);\">Coming Soon</div>" : ""}
+      <div class="agent-item">
+        <div class="agent-name">${a.name}</div>
+        <div class="agent-tags">${tagBadges}</div>
+        <div class="agent-desc">${a.description}</div>
+      </div>
     `;
     li.classList.toggle("active", a.id === state.activeAgentId);
-    if (a.disabled) {
-      li.style.opacity = "0.6";
-      li.style.cursor = "not-allowed";
-    } else {
-      li.onclick = () => selectAgent(a.id);
-    }
+    li.onclick = () => selectAgent(a.id);
     list.appendChild(li);
   });
 }
@@ -72,32 +91,44 @@ function renderAgentCard() {
   }
   card.classList.remove("hidden");
   
-  const capabilitiesBadges = agent.capabilities.map(cap => 
+  const capabilitiesBadges = agent.capabilities ? agent.capabilities.map(cap => 
     `<span class="capability-badge">${cap}</span>`
-  ).join("");
+  ).join("") : "";
+  
+  const tagBadges = agent.tags ? agent.tags.map(tag => 
+    `<span class="tag-badge">${tag}</span>`
+  ).join("") : "";
   
   card.innerHTML = `
     <div class="agent-header">
       <strong>${agent.name}</strong>
-      ${agent.disabled ? "<span class=\"status-badge disabled\">Disabled</span>" : "<span class=\"status-badge active\">Active</span>"}
+      <span class="status-badge active">Active</span>
     </div>
     <div class="agent-description">${agent.description}</div>
     <div class="agent-config">
-      <div class="config-row"><span>Model:</span> <code>${agent.model}</code></div>
-      <div class="config-row"><span>Temperature:</span> <code>${agent.temperature}</code></div>
+      <div class="config-row"><span>Port:</span> <code>${agent.port}</code></div>
       <div class="config-row"><span>Endpoint:</span> <code>${agent.endpoint}</code></div>
+      <div class="config-row"><span>Agent ID:</span> <code>${agent.id}</code></div>
     </div>
-    <div class="agent-capabilities">
+    ${tagBadges ? `<div class="agent-tags-section">
+      <div class="tags-label">Tags:</div>
+      <div class="tags-list">${tagBadges}</div>
+    </div>` : ""}
+    ${capabilitiesBadges ? `<div class="agent-capabilities">
       <div class="capabilities-label">Capabilities:</div>
       <div class="capabilities-list">${capabilitiesBadges}</div>
-    </div>
+    </div>` : ""}
   `;
 }
 
 function renderChats() {
   const list = $("#chat-list");
   list.innerHTML = "";
-  state.chats.forEach((c) => {
+  
+  // Filter chats for the current agent
+  const agentChats = state.chats.filter(chat => chat.agentId === state.activeAgentId);
+  
+  agentChats.forEach((c) => {
     const li = document.createElement("li");
     li.classList.toggle("active", c.id === state.activeChatId);
     
@@ -155,16 +186,178 @@ function createNewChat() {
 }
 
 function ensureActiveChat() {
-  if (state.chats.length === 0) {
+  // Filter chats for current agent
+  const agentChats = state.chats.filter(chat => chat.agentId === state.activeAgentId);
+  
+  if (agentChats.length === 0) {
     createNewChat();
-  } else if (!state.activeChatId || !state.chats.find(c => c.id === state.activeChatId)) {
-    // Select the first chat if no active chat or active chat doesn't exist
-    state.activeChatId = state.chats[0].id;
+  } else if (!state.activeChatId || !agentChats.find(c => c.id === state.activeChatId)) {
+    // Select the first chat for this agent if no active chat or active chat doesn't belong to this agent
+    state.activeChatId = agentChats[0].id;
   }
 }
 
 function getActiveChat() {
-  return state.chats.find(c => c.id === state.activeChatId) || state.chats[0];
+  // Get the active chat, ensuring it belongs to the current agent
+  const agentChats = state.chats.filter(chat => chat.agentId === state.activeAgentId);
+  return agentChats.find(c => c.id === state.activeChatId) || agentChats[0];
+}
+
+function processMessageContent(content) {
+
+  // Detect and format different types of code content
+  const codeBlockRegex = /```(\w+)?\n?([\s\S]*?)```/g;
+  let processedContent = escapeHtml(content);
+
+  // Replace code blocks with syntax-highlighted versions
+  processedContent = processedContent.replace(codeBlockRegex, (match, language, code) => {
+    const lang = language || detectLanguage(code.trim());
+    const langClass = lang ? `language-${lang}` : "";
+    const langLabel = lang ? lang.toUpperCase() : "CODE";
+    
+    return `<div class="code-block">
+      <div class="code-block-header">${langLabel}</div>
+      <pre class="${langClass}"><code class="${langClass}">${code.trim()}</code></pre>
+    </div>`;
+  });
+
+  // Handle inline code
+  processedContent = processedContent.replace(/`([^`]+)`/g, "<code>$1</code>");
+
+  // Auto-detect JSON responses (common in API responses)
+  if (isLikelyJSON(content)) {
+    try {
+      const parsed = JSON.parse(content);
+      const formatted = JSON.stringify(parsed, null, 2);
+      return `<div class="code-block">
+        <div class="code-block-header">JSON</div>
+        <pre class="language-json"><code class="language-json">${escapeHtml(formatted)}</code></pre>
+      </div>`;
+    } catch (e) {
+      // Not valid JSON, continue with normal processing
+    }
+  }
+
+  // Auto-detect YAML responses
+  if (isLikelyYAML(content)) {
+    return `<div class="code-block">
+      <div class="code-block-header">YAML</div>
+      <pre class="language-yaml"><code class="language-yaml">${escapeHtml(content)}</code></pre>
+    </div>`;
+  }
+
+  // Auto-detect Python code responses
+  if (isLikelyPython(content)) {
+    return `<div class="code-block">
+      <div class="code-block-header">PYTHON</div>
+      <pre class="language-python"><code class="language-python">${escapeHtml(content)}</code></pre>
+    </div>`;
+  }
+
+  // Auto-detect and render Markdown content
+  if (isLikelyMarkdown(content)) {
+    return renderMarkdown(content);
+  }
+
+  return processedContent;
+}
+
+function detectLanguage(code) {
+  // Simple language detection based on common patterns
+  if (code.includes("def ") || code.includes("import ") || code.includes("from ") || code.includes("print(")) {
+    return "python";
+  }
+  if (code.includes("function ") || code.includes("const ") || code.includes("let ") || code.includes("var ")) {
+    return "javascript";
+  }
+  if (code.includes("SELECT ") || code.includes("INSERT ") || code.includes("UPDATE ") || code.includes("DELETE ")) {
+    return "sql";
+  }
+  if (code.includes("#!/bin/") || code.includes("echo ") || code.includes("grep ")) {
+    return "bash";
+  }
+  if (code.trim().startsWith("{") && code.trim().endsWith("}")) {
+    return "json";
+  }
+  if (code.includes("---") || code.includes(": ") && code.includes("  ")) {
+    return "yaml";
+  }
+  if (code.includes("# ") || code.includes("## ") || code.includes("### ") || code.includes("- ") || code.includes("* ")) {
+    return "markdown";
+  }
+  return "";
+}
+
+function isLikelyJSON(content) {
+  const trimmed = content.trim();
+  return (trimmed.startsWith("{") && trimmed.endsWith("}")) || 
+         (trimmed.startsWith("[") && trimmed.endsWith("]"));
+}
+
+function isLikelyYAML(content) {
+  const lines = content.trim().split("\n");
+  return lines.some(line => /^\s*\w+:\s*/.test(line)) || content.includes("---");
+}
+
+function isLikelyPython(content) {
+  const pythonKeywords = ["def ", "class ", "import ", "from ", "if __name__", "print(", "return "];
+  return pythonKeywords.some(keyword => content.includes(keyword));
+}
+
+function isLikelyMarkdown(content) {
+  const markdownPatterns = [
+    /^#{1,6}\s+/m,        // Headers
+    /^\s*[-*+]\s+/m,      // Unordered lists  
+    /^\s*\d+\.\s+/m,      // Ordered lists
+    /\*\*[^*]+\*\*/,      // Bold text
+    /\*[^*]+\*/,          // Italic text
+    /`[^`]+`/,            // Inline code
+    /\[.+\]\(.+\)/,       // Links
+    /^\s*>/m              // Blockquotes
+  ];
+  
+  // Check if content has multiple markdown patterns
+  const matchCount = markdownPatterns.filter(pattern => pattern.test(content)).length;
+  return matchCount >= 2 || content.includes("###") || (content.includes("**") && content.includes("- "));
+}
+
+function renderMarkdown(content) {
+  // Simple markdown to HTML conversion
+  let html = escapeHtml(content);
+  
+  // Headers
+  html = html.replace(/^### (.+)$/gm, "<h3>$1</h3>");
+  html = html.replace(/^## (.+)$/gm, "<h2>$1</h2>");
+  html = html.replace(/^# (.+)$/gm, "<h1>$1</h1>");
+  
+  // Bold and italic
+  html = html.replace(/\*\*(.+?)\*\*/g, "<strong>$1</strong>");
+  html = html.replace(/\*(.+?)\*/g, "<em>$1</em>");
+  
+  // Code blocks (already handled separately)
+  // Inline code
+  html = html.replace(/`([^`]+)`/g, "<code>$1</code>");
+  
+  // Lists
+  html = html.replace(/^(\s*)[-*+]\s+(.+)$/gm, "$1• $2");
+  html = html.replace(/^(\s*)\d+\.\s+(.+)$/gm, "$1$2");
+  
+  // Line breaks
+  html = html.replace(/\n\n/g, "</p><p>");
+  html = html.replace(/\n/g, "<br>");
+  
+  // Wrap in paragraphs
+  if (!html.includes("<h1>") && !html.includes("<h2>") && !html.includes("<h3>")) {
+    html = "<p>" + html + "</p>";
+  }
+  
+  return html;
+}
+
+function escapeHtml(text) {
+  const div = document.createElement("div");
+  div.textContent = text;
+  return div.innerHTML;
 }
 
 function renderMessages() {
@@ -177,7 +370,11 @@ function renderMessages() {
     chat.messages.forEach((m) => {
       const div = document.createElement("div");
       div.className = `msg ${m.role}`;
-      div.textContent = m.content;
+      
+      // Process the content for syntax highlighting
+      const processedContent = processMessageContent(m.content);
+      div.innerHTML = processedContent;
+      
       container.appendChild(div);
     });
   }
@@ -185,6 +382,13 @@ function renderMessages() {
   // Auto-scroll to bottom with smooth behavior
   setTimeout(() => {
     container.scrollTop = container.scrollHeight;
+    
+    // Apply syntax highlighting to any code blocks
+    // eslint-disable-next-line no-undef
+    if (typeof Prism !== "undefined") {
+      // eslint-disable-next-line no-undef
+      Prism.highlightAllUnder(container);
+    }
   }, 10);
 }
 
@@ -196,18 +400,38 @@ async function sendMessage(text) {
   renderChats(); // Update chat list to show new message count
 
   try {
+    // Get the selected agent's port
+    const activeAgent = state.agents.find(a => a.id === state.activeAgentId);
+    const agentPort = activeAgent ? activeAgent.port : 8123;
+    
     const protocol = window.location.protocol;
     const host = window.location.hostname;
-    const agentPort = (new URLSearchParams(window.location.search)).get("agent_port") || "8123";
     const url = `${protocol}//${host}:${agentPort}/query`;
+    
     const res = await fetch(url, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ query: text }),
     });
     const data = await res.json();
-    const reply = typeof data.response === "string" ? data.response : (data.response?.summary || JSON.stringify(data.response));
-    chat.messages.push({ role: "assistant", content: reply });
+    
+    // Handle different response formats from different agents
+    let reply;
+    if (typeof data.response === "string") {
+      reply = data.response;
+    } else if (data.response?.summary) {
+      reply = data.response.summary;
+    } else if (data.response) {
+      reply = JSON.stringify(data.response, null, 2);
+    } else {
+      reply = "No response received";
+    }
+    
+    chat.messages.push({ 
+      role: "assistant", 
+      content: reply,
+      agent: activeAgent ? activeAgent.name : "Unknown Agent"
+    });
   } catch (e) {
     chat.messages.push({ role: "assistant", content: `Error: ${e.message}` });
   }
@@ -217,14 +441,57 @@ async function sendMessage(text) {
 
 function selectAgent(id) {
   state.activeAgentId = id;
+  
+  // Filter chats for this agent or create a new chat if none exist
+  const agentChats = state.chats.filter(chat => chat.agentId === id);
+  
+  if (agentChats.length > 0) {
+    // Switch to the most recent chat for this agent
+    const mostRecentChat = agentChats.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt))[0];
+    state.activeChatId = mostRecentChat.id;
+  } else {
+    // Create a new chat for this agent
+    createNewChat();
+  }
+  
   renderAgentCard();
   renderAgents(); // Re-render to update active styling
+  renderChats(); // Update chat list to show agent-specific chats
+  renderMessages(); // Load messages for the selected chat
+  saveState();
+  
+  // Auto-scroll to bottom and focus on input for immediate interaction
+  setTimeout(() => {
+    const container = $("#chat");
+    if (container) {
+      container.scrollTop = container.scrollHeight;
+    }
+    
+    // Focus on the input field for immediate typing
+    const input = $("#input");
+    if (input) {
+      input.focus();
+    }
+  }, 100); // Small delay to ensure rendering is complete
 }
 
 function selectChat(chatId) {
   state.activeChatId = chatId;
   renderMessages();
   renderChats(); // Update active styling
+  
+  // Auto-scroll to bottom and focus on input
+  setTimeout(() => {
+    const container = $("#chat");
+    if (container) {
+      container.scrollTop = container.scrollHeight;
+    }
+    
+    const input = $("#input");
+    if (input) {
+      input.focus();
+    }
+  }, 50);
 }
 
 function editChatTitle(chatId) {
@@ -329,13 +596,7 @@ function bindEvents() {
       burgerMenu.setAttribute("aria-hidden", "true");
     });
   }
-  if (menuSettings) {
-    menuSettings.addEventListener("click", () => {
-      const settingsPanel = $("#settings-panel");
-      if (settingsPanel) settingsPanel.setAttribute("aria-hidden", "false");
-      burgerMenu.setAttribute("aria-hidden", "true");
-    });
-  }
+
 
   // Settings panel
   const settingsBtn = $("#settings");
@@ -345,10 +606,27 @@ function bindEvents() {
     settingsBtn.addEventListener("click", () => {
       const isHidden = settingsPanel.getAttribute("aria-hidden") !== "false";
       settingsPanel.setAttribute("aria-hidden", isHidden ? "false" : "true");
+      
+      // Check service health when opening settings
+      if (isHidden) {
+        checkAllServices();
+      }
     });
   }
   if (settingsClose) {
     settingsClose.addEventListener("click", () => settingsPanel.setAttribute("aria-hidden", "true"));
+  }
+  
+  // Menu settings button
+  if (menuSettings) {
+    menuSettings.addEventListener("click", () => {
+      const settingsPanel = $("#settings-panel");
+      if (settingsPanel) {
+        settingsPanel.setAttribute("aria-hidden", "false");
+        checkAllServices(); // Check health when opening via menu
+      }
+      burgerMenu.setAttribute("aria-hidden", "true");
+    });
   }
 
   // Collapsible panes
@@ -430,18 +708,20 @@ function bindEvents() {
   updateColumns();
 }
 
-function init() {
+async function init() {
   // Load any saved state from localStorage
   loadState();
   
   // Set application title from URL params or default
   setApplicationTitle();
   
-  renderAgents();
-  renderAgentCard();
+  // Load agents from API first
+  await loadAgents();
+  
   renderChats();
   renderMessages();
   bindEvents();
+  bindStatusEvents(); // Bind status panel events
   
   // Save state periodically
   setInterval(saveState, 5000); // Save every 5 seconds
@@ -482,6 +762,121 @@ function loadState() {
     }
   } catch (e) {
     // console.warn("Failed to load saved state:", e);
+  }
+}
+
+// Service Health Checking
+async function checkServiceHealth(serviceName, port) {
+  try {
+    // For now, use direct localhost URLs - CORS should be handled by the services
+    const response = await fetch(`http://localhost:${port}/health`, {
+      method: "GET",
+      mode: "cors", // Explicitly request CORS
+      timeout: 3000,
+    });
+    
+    if (response.ok) {
+      const data = await response.json();
+      return {
+        status: "healthy",
+        emoji: "✅",
+        details: data
+      };
+    } else {
+      return {
+        status: "unhealthy",
+        emoji: "❌",
+        details: { error: `HTTP ${response.status}` }
+      };
+    }
+  } catch (error) {
+    // Check if it's a CORS error specifically
+    if (error.name === "TypeError" && error.message.includes("CORS")) {
+      return {
+        status: "cors_error",
+        emoji: "⚠️",
+        details: { error: "CORS blocked" }
+      };
+    }
+    return {
+      status: "offline",
+      emoji: "🔴",
+      details: { error: error.message }
+    };
+  }
+}
+
+async function checkAllServices() {
+  const services = [
+    { name: "ui", port: 8120, displayName: "UI" },
+    { name: "api", port: 8121, displayName: "API" },
+    { name: "mcp", port: 8122, displayName: "MCP" },
+    { name: "supervisor", port: 8123, displayName: "Supervisor" },
+    { name: "log-monitor", port: 8124, displayName: "Log Monitor" },
+    { name: "code-fixer", port: 8125, displayName: "Code Fixer" },
+    { name: "linting", port: 8127, displayName: "Linting" },
+    { name: "testing", port: 8126, displayName: "Testing" },
+    { name: "github", port: 8128, displayName: "GitHub" }
+  ];
+
+  // Set all services to checking status
+  services.forEach(service => {
+    updateServiceStatus(service.name, "checking", "⏳");
+  });
+
+  // Check each service
+  const healthChecks = services.map(async (service) => {
+    const health = await checkServiceHealth(service.name, service.port);
+    updateServiceStatus(service.name, health.status, health.emoji);
+    return { name: service.name, ...health };
+  });
+
+  const results = await Promise.all(healthChecks);
+  
+  // Update system info
+  updateSystemInfo(results);
+  
+  // Store results in state
+  state.serviceStatus = results.reduce((acc, result) => {
+    acc[result.name] = result;
+    return acc;
+  }, {});
+}
+
+function updateServiceStatus(serviceName, status, emoji) {
+  const statusElement = document.querySelector(`[data-service="${serviceName}"]`);
+  if (statusElement) {
+    statusElement.textContent = `${emoji} ${status.charAt(0).toUpperCase() + status.slice(1)}`;
+    statusElement.className = `service-status ${status}`;
+  }
+}
+
+function updateSystemInfo(results) {
+  const totalServices = results.length;
+  const healthyCount = results.filter(r => r.status === "healthy").length;
+  const lastCheck = new Date().toLocaleTimeString();
+  
+  const totalElement = document.getElementById("total-services");
+  const healthyElement = document.getElementById("healthy-count");
+  const lastCheckElement = document.getElementById("last-check");
+  
+  if (totalElement) totalElement.textContent = totalServices;
+  if (healthyElement) healthyElement.textContent = healthyCount;
+  if (lastCheckElement) lastCheckElement.textContent = lastCheck;
+}
+
+function bindStatusEvents() {
+  const refreshBtn = document.getElementById("refresh-status");
+  if (refreshBtn) {
+    refreshBtn.addEventListener("click", async () => {
+      refreshBtn.disabled = true;
+      refreshBtn.textContent = "⏳ Checking...";
+      
+      await checkAllServices();
+      
+      refreshBtn.disabled = false;
+      refreshBtn.textContent = "🔄 Refresh Status";
+    });
   }
 }
 

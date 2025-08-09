@@ -2,40 +2,221 @@
 # This file defines the available agents and their configurations
 
 agents:
-  - id: "agent-1"
-    name: "Vectras Agent"
-    description: "Default Vectras agent with query capabilities and backend health monitoring"
+  - id: "supervisor"
+    name: "Supervisor Agent"
+    description: "Main supervisor agent that manages user settings, tracks project location, and coordinates with other agents"
     enabled: true
     model: "gpt-4o-mini"
     temperature: 0.2
-    max_tokens: 1000
-    system_prompt: "You are a helpful assistant for the Vectras platform."
+    max_tokens: 2000
+    system_prompt: "You are the Vectras supervisor agent. You manage user settings, API keys, project locations, and coordinate with other agents. You can monitor the health of Vectras services and handoff tasks to specialized agents."
     capabilities:
-      - "Chat"
-      - "Backend Health Check"
+      - "User Settings Management"
+      - "Project File Access"
+      - "Agent Coordination"
+      - "Health Monitoring"
       - "System Status"
     endpoint: "/query"
+    port: 8123
     tags:
-      - "default"
-      - "health"
+      - "supervisor"
+      - "coordinator"
+    memory:
+      enabled: true
+      type: "sqlite"
+      database_path: "./data/supervisor_memory.db"
+      session_ttl: 3600
+      max_conversations: 100
+    settings:
+      project_root: "./."
+      user_settings_file: "./config/user_settings.yaml"
+      handoff_timeout: 30
 
-  - id: "agent-2"
-    name: "Code Assistant"
-    description: "Specialized agent for code review, debugging, and programming assistance"
-    enabled: false
+  - id: "log-monitor"
+    name: "Log Monitor Agent"
+    description: "Monitors application logs for errors, stack traces, and notifications to other agents"
+    enabled: true
+    model: "gpt-4o-mini"
+    temperature: 0.1
+    max_tokens: 1500
+    system_prompt: "You are the Vectras log monitor agent. You continuously monitor application logs, detect errors and stack traces, and notify other agents when issues are found. You provide detailed error analysis and context."
+    capabilities:
+      - "Log Monitoring"
+      - "Error Detection"
+      - "Stack Trace Analysis"
+      - "Agent Notification"
+    endpoint: "/query"
+    port: 8124
+    tags:
+      - "monitoring"
+      - "logs"
+    memory:
+      enabled: true
+      type: "sqlite"
+      database_path: "./data/log_monitor_memory.db"
+      session_ttl: 7200
+      max_conversations: 50
+    settings:
+      log_directory: "./logs"
+      monitor_interval: 5
+      error_patterns:
+        - "ERROR"
+        - "Exception"
+        - "Traceback"
+        - "FATAL"
+        - "CRITICAL"
+      max_log_size: "10MB"
+
+  - id: "code-fixer"
+    name: "Code Fixer Agent"
+    description: "Analyzes errors and code issues, suggests fixes, and creates GitHub branches and PRs"
+    enabled: true
+    model: "gpt-4o-mini"
+    temperature: 0.1
+    max_tokens: 3000
+    system_prompt: "You are the Vectras code fixer agent. You analyze stack traces and errors, examine the codebase to understand issues, suggest code fixes, and create GitHub branches with pull requests for the suggested changes."
+    capabilities:
+      - "Error Analysis"
+      - "Code Analysis"
+      - "Fix Suggestions"
+      - "GitHub Integration"
+      - "PR Creation"
+    endpoint: "/query"
+    port: 8125
+    tags:
+      - "coding"
+      - "fixes"
+      - "github"
+    memory:
+      enabled: true
+      type: "sqlite"
+      database_path: "./data/code_fixer_memory.db"
+      session_ttl: 7200
+      max_conversations: 75
+    settings:
+      github_enabled: false
+      github_token_env: "GITHUB_TOKEN"
+      branch_prefix: "vectras-fix"
+      pr_labels:
+        - "automated-fix"
+        - "vectras-agent"
+      linting_agent_port: 8127
+      auto_lint_fixes: true
+
+  - id: "linting"
+    name: "Linting Agent"
+    description: "Runs linters on code changes, applies auto-fixes, and ensures code quality standards"
+    enabled: true
     model: "gpt-4o-mini"
     temperature: 0.1
     max_tokens: 2000
-    system_prompt: "You are an expert programming assistant. Help with code review, debugging, and best practices."
+    system_prompt: "You are the Vectras linting agent. You run linters on code changes, apply auto-fixes, and ensure code quality standards. You work with the code fixer agent to finalize fixes before creating PRs."
     capabilities:
-      - "Code Review"
-      - "Debugging"
-      - "Best Practices"
-      - "Documentation"
+      - "Code Linting"
+      - "Auto-Fixing"
+      - "Format Checking"
+      - "Quality Standards"
+      - "Multi-Language Support"
     endpoint: "/query"
+    port: 8127
     tags:
-      - "development"
-      - "coding"
+      - "linting"
+      - "quality"
+      - "formatting"
+    memory:
+      enabled: true
+      type: "sqlite"
+      database_path: "./data/linting_memory.db"
+      session_ttl: 3600
+      max_conversations: 50
+    settings:
+      linters:
+        python:
+          - "ruff"
+          - "black"
+        javascript:
+          - "eslint"
+          - "prettier"
+        bash:
+          - "shellcheck"
+      auto_fix: true
+      format_on_save: true
+      lint_directories:
+        - "./src"
+        - "./tests"
+        - "./frontend"
+      exclude_patterns:
+        - "**/node_modules/**"
+        - "**/__pycache__/**"
+        - "**/.venv/**"
+
+  - id: "testing"
+    name: "Testing Agent"
+    description: "Creates test tools, generates integration tests, and can introduce controlled bugs for other agents to detect and fix"
+    enabled: true
+    model: "gpt-4o-mini"
+    temperature: 0.3
+    max_tokens: 3000
+    system_prompt: "You are the Vectras testing agent. You create test tools, generate integration tests, and can introduce controlled bugs or issues for other agents to detect and fix. You help ensure system reliability and agent coordination."
+    capabilities:
+      - "Test Tool Creation"
+      - "Bug Introduction"
+      - "Integration Test Generation"
+      - "System Testing"
+      - "Agent Coordination Testing"
+    endpoint: "/query"
+    port: 8126
+    tags:
+      - "testing"
+      - "quality-assurance"
+      - "integration"
+    memory:
+      enabled: true
+      type: "sqlite"
+      database_path: "./data/testing_memory.db"
+      session_ttl: 7200
+      max_conversations: 100
+    settings:
+      test_tools_directory: "./test_tools"
+      bug_severity_levels: ["low", "medium", "high"]
+      supported_languages: ["python", "javascript", "bash"]
+      integration_test_path: "./tests/integration"
+      enable_bug_injection: true
+
+  - id: "github"
+    name: "GitHub Agent"
+    description: "Handles GitHub operations including branch creation, commits, and pull request management"
+    enabled: true
+    model: "gpt-4o-mini"
+    temperature: 0.1
+    max_tokens: 2000
+    system_prompt: "You are the Vectras GitHub agent. You handle GitHub operations like creating branches, committing code, and creating pull requests. You work with the code fixer agent to manage GitHub workflows."
+    capabilities:
+      - "Branch Management"
+      - "Code Committing"
+      - "Pull Request Creation"
+      - "Repository Operations"
+      - "GitHub API Integration"
+    endpoint: "/query"
+    port: 8128
+    tags:
+      - "github"
+      - "version-control"
+      - "collaboration"
+    memory:
+      enabled: true
+      type: "sqlite"
+      database_path: "./data/github_memory.db"
+      session_ttl: 3600
+      max_conversations: 50
+    settings:
+      github_token: "${GITHUB_TOKEN}"
+      repo_owner: "maximilien"
+      repo_name: "vectras"
+      default_branch: "main"
+      branch_prefix: "vectras-"
+      pr_template: "PR created by Vectras GitHub Agent"
+      auto_merge: false
 
 # Global settings
 settings:
@@ -44,3 +225,4 @@ settings:
   default_max_tokens: 1000
   api_timeout: 30
   enable_logging: true
+  github_token: "${GITHUB_TOKEN}"

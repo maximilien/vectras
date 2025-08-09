@@ -1,6 +1,9 @@
 #!/bin/bash
 set -euo pipefail
 
+# Clear VIRTUAL_ENV to avoid uv warnings about mismatched environments
+export VIRTUAL_ENV=""
+
 echo "🧹 Running Ruff lint..."
 uvx ruff check src tests && echo "✅ Python lint passed" || { echo "❌ Python lint failed"; exit 1; }
 

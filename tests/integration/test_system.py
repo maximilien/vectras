@@ -67,7 +67,7 @@ def test_components_end_to_end(tmp_path):
             sys.executable,
             "-m",
             "uvicorn",
-            "src.vectras.agents.agent:app",
+            "src.vectras.agents.supervisor:app",
             "--host",
             env["VECTRAS_AGENT_HOST"],
             "--port",
@@ -91,8 +91,8 @@ def test_components_end_to_end(tmp_path):
         )
         assert r.status_code == 200
         data = r.json()["response"]
-        assert data["api"]["status"] == "ok"
-        assert data["mcp"]["success"] is True
+        assert data["api"]["status"] == "healthy"
+        assert data["mcp"]["status"] == "healthy"
 
         # Direct calls as tools
         r_api = requests.get(

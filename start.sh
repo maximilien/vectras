@@ -39,8 +39,8 @@ stop_existing() {
     rm -f .pid
   fi
   
-  # Check and clear ports
-  for port in ${VECTRAS_UI_PORT:-8120} ${VECTRAS_API_PORT:-8121} ${VECTRAS_MCP_PORT:-8122} ${VECTRAS_AGENT_PORT:-8123}; do
+  # Check and clear ports (including new agent ports)
+  for port in ${VECTRAS_UI_PORT:-8120} ${VECTRAS_API_PORT:-8121} ${VECTRAS_MCP_PORT:-8122} ${VECTRAS_AGENT_PORT:-8123} 8124 8125 8126 8127 8128; do
     check_port $port
   done
 }
@@ -58,13 +58,23 @@ stop_existing
 
 start_service api env -u VIRTUAL_ENV uv run uvicorn src.vectras.apis.api:app --host ${VECTRAS_API_HOST:-localhost} --port ${VECTRAS_API_PORT:-8121}
 start_service mcp env -u VIRTUAL_ENV uv run uvicorn src.vectras.mcp.server:app --host ${VECTRAS_MCP_HOST:-localhost} --port ${VECTRAS_MCP_PORT:-8122}
-start_service agent env -u VIRTUAL_ENV uv run uvicorn src.vectras.agents.agent:app --host ${VECTRAS_AGENT_HOST:-localhost} --port ${VECTRAS_AGENT_PORT:-8123}
+start_service supervisor env -u VIRTUAL_ENV uv run uvicorn src.vectras.agents.supervisor:app --host ${VECTRAS_AGENT_HOST:-localhost} --port ${VECTRAS_AGENT_PORT:-8123}
+start_service log-monitor env -u VIRTUAL_ENV uv run uvicorn src.vectras.agents.log_monitor:app --host localhost --port 8124
+start_service code-fixer env -u VIRTUAL_ENV uv run uvicorn src.vectras.agents.code_fixer:app --host localhost --port 8125
+start_service linting env -u VIRTUAL_ENV uv run uvicorn src.vectras.agents.linting:app --host localhost --port 8127
+start_service testing env -u VIRTUAL_ENV uv run uvicorn src.vectras.agents.testing:app --host localhost --port 8126
+start_service github env -u VIRTUAL_ENV uv run uvicorn src.vectras.agents.github:app --host localhost --port 8128
 start_service ui env -u VIRTUAL_ENV uv run uvicorn src.vectras.frontend.app:app --host ${VECTRAS_UI_HOST:-localhost} --port ${VECTRAS_UI_PORT:-8120}
 
 echo "✅ All services started. Logs in ./logs."
-echo "🧪 UI:     http://localhost:${VECTRAS_UI_PORT:-8120}/"
-echo "🧪 API:    http://localhost:${VECTRAS_API_PORT:-8121}/health"
-echo "🧪 MCP:    http://localhost:${VECTRAS_MCP_PORT:-8122}/health"
-echo "🧪 Agent:  http://localhost:${VECTRAS_AGENT_PORT:-8123}/health"
+echo "🧪 UI:           http://localhost:${VECTRAS_UI_PORT:-8120}/"
+echo "🧪 API:          http://localhost:${VECTRAS_API_PORT:-8121}/health"
+echo "🧪 MCP:          http://localhost:${VECTRAS_MCP_PORT:-8122}/health"
+echo "🧪 Supervisor:   http://localhost:${VECTRAS_AGENT_PORT:-8123}/health"
+echo "🧪 Log Monitor:  http://localhost:8124/health"
+echo "🧪 Code Fixer:   http://localhost:8125/health"
+echo "🧪 Linting:      http://localhost:8127/health"
+echo "🧪 Testing:      http://localhost:8126/health"
+echo "🧪 GitHub:       http://localhost:8128/health"
 
 

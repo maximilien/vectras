@@ -15,11 +15,16 @@ dependencies = [
   "pydantic>=2.7.0",
   "httpx>=0.27.0",
   "openai>=1.40.0",
+  "openai-agents>=0.2.0",
   "python-dotenv>=1.0.1",
   "requests>=2.32.0",
   "pytest>=8.2.0",
   "pytest-asyncio>=0.23.0",
   "anyio>=4.4.0",
+  "pyyaml>=6.0.1",
+  "pygithub>=2.1.1",
+  "watchdog>=3.0.0",
+  "gitpython>=3.1.40",
 ]
 
 [project.optional-dependencies]
@@ -35,6 +40,9 @@ minversion = "8.0"
 addopts = "-ra"
 testpaths = ["tests"]
 asyncio_mode = "auto"
+filterwarnings = [
+    "ignore::pytest.PytestCollectionWarning:src/vectras/agents/testing.py",
+]
 
 [tool.ruff]
 line-length = 100
