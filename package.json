@@ -1,0 +1,13 @@
+{
+  "name": "vectras-frontend",
+  "version": "0.1.0",
+  "description": "Frontend linting for Vectras",
+  "private": true,
+  "scripts": {
+    "lint:js": "eslint frontend/**/*.js",
+    "lint:js:fix": "eslint frontend/**/*.js --fix"
+  },
+  "devDependencies": {
+    "eslint": "^8.57.0"
+  }
+}
