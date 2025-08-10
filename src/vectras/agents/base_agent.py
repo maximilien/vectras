@@ -158,6 +158,67 @@ class BaseAgent(ABC):
         # Use fake response for testing
         if os.getenv("VECTRAS_FAKE_OPENAI", "0") == "1":
             user_message = next((msg["content"] for msg in messages if msg["role"] == "user"), "")
+            system_message = next((msg["content"] for msg in messages if msg["role"] == "system"), "")
+            
+            # Provide better fake responses for testing agent
+            if self.agent_id == "testing":
+                if "create a test tool" in system_message.lower() or "tool creator" in system_message.lower():
+                    return """Here's a test tool with a divide by zero bug:
+
+```python
+def divide(n1, n2):
+    \"\"\"Divide n1 by n2. This function has a bug - it divides by 0 instead of n2.\"\"\"
+    # BUG: This should be n2, not 0
+    result = n1 / 0
+    print(f"Result of {n1} / {n2} = {result}")
+    return result
+```
+
+This tool has a high severity bug where it divides by 0 instead of the second parameter."""
+                elif "integration test" in system_message.lower():
+                    return """Here's an integration test for the agent system:
+
+```python
+import pytest
+import asyncio
+
+@pytest.mark.asyncio
+async def test_agent_coordination():
+    \"\"\"Test that agents can coordinate and hand off tasks.\"\"\"
+    # Test implementation would go here
+    assert True
+```"""
+            
+            # Provide better fake responses for other agents
+            elif self.agent_id == "log-monitor":
+                if "error" in user_message.lower() or "handoff" in user_message.lower():
+                    return "Error detected in divide tool execution. Handing off to code-fixer agent for analysis and fix."
+                return "Monitoring logs for errors and issues."
+            elif self.agent_id == "code-fixer":
+                if "divide" in user_message.lower() or "bug" in user_message.lower():
+                    return """Fixed the divide tool bug:
+
+```python
+def divide(n1, n2):
+    \"\"\"Divide n1 by n2. Fixed version.\"\"\"
+    if n2 == 0:
+        raise ValueError("Cannot divide by zero")
+    result = n1 / n2
+    print(f"Result of {n1} / {n2} = {result}")
+    return result
+```
+
+The bug was fixed by changing the division from `n1 / 0` to `n1 / n2` and adding proper error handling."""
+                return "Analyzing code for bugs and providing fixes."
+            elif self.agent_id == "linting":
+                if "lint" in user_message.lower() or "quality" in user_message.lower():
+                    return "Code quality check passed. No linting issues found in the fixed divide tool."
+                return "Performing code quality and linting checks."
+            elif self.agent_id == "github":
+                if "branch" in user_message.lower() or "pr" in user_message.lower():
+                    return "Created branch 'fix-divide-tool-bug' and pull request #123 with the fix for the divide tool."
+                return "Managing GitHub operations and pull requests."
+            
             return f"[FAKE_OPENAI_RESPONSE] Agent {self.agent_id}: {user_message}"
 
         try:
@@ -249,6 +310,7 @@ class BaseAgent(ABC):
     async def query(self, request: QueryRequest) -> QueryResponse:
         """Main query endpoint."""
         try:
+            print(f"DEBUG: {self.agent_id} agent received query: {request.query[:100]}...")
             self.status = "active"
             self.current_task = (
                 request.query[:50] + "..." if len(request.query) > 50 else request.query

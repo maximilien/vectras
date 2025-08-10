@@ -399,6 +399,40 @@ class LogMonitorAgent(BaseAgent):
             await self.scan_existing_logs()
             return {"status": "log scan completed", "recent_errors": len(self.recent_errors)}
 
+        # Handle handoff to code fixer requests
+        if "handoff" in query_lower and "code-fixer" in query_lower:
+            recent_errors = await self.get_recent_errors(5)
+            if recent_errors:
+                # Find the most recent error
+                latest_error = recent_errors[0]
+                log_entry = LogEntry(
+                    latest_error["file_path"],
+                    latest_error["line_number"],
+                    latest_error["content"],
+                    latest_error["timestamp"]
+                )
+                await self.notify_code_fixer(log_entry)
+                return f"✅ Handed off error to code-fixer agent: {latest_error['content'][:100]}..."
+            else:
+                return "ℹ️ No recent errors found to handoff to code-fixer."
+
+        # Check for recent errors and handoff if any found
+        if "check for recent errors" in query_lower and "handoff" in query_lower:
+            recent_errors = await self.get_recent_errors(5)
+            if recent_errors:
+                # Find the most recent error
+                latest_error = recent_errors[0]
+                log_entry = LogEntry(
+                    latest_error["file_path"],
+                    latest_error["line_number"],
+                    latest_error["content"],
+                    latest_error["timestamp"]
+                )
+                await self.notify_code_fixer(log_entry)
+                return f"✅ Found error and handed off to code-fixer agent: {latest_error['content'][:100]}..."
+            else:
+                return "ℹ️ No recent errors found to handoff to code-fixer."
+
         # Default LLM response with monitoring context
         messages = [
             {
@@ -416,6 +450,7 @@ I can help with:
 - Analyzing error patterns and trends
 - Providing error summaries and reports
 - Notifying other agents about critical issues
+- Handing off errors to code-fixer agent
 """,
             },
             {"role": "user", "content": query},
