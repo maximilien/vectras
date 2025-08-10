@@ -1,3 +1,8 @@
+# SPDX-License-Identifier: MIT
+# Copyright (c) 2025 dr.max
+
+"""Unit tests for MCP module."""
+
 from fastapi.testclient import TestClient
 
 from vectras.mcp.server import create_app

@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: MIT
+// Copyright (c) 2025 dr.max
+
 const $ = (s) => document.querySelector(s);
 
 const state = {
@@ -97,8 +100,8 @@ function renderAgentCard() {
 
   const capabilitiesBadges = agent.capabilities
     ? agent.capabilities
-        .map((cap) => `<span class="capability-badge">${cap}</span>`)
-        .join("")
+      .map((cap) => `<span class="capability-badge">${cap}</span>`)
+      .join("")
     : "";
 
   const tagBadges = agent.tags
@@ -117,21 +120,21 @@ function renderAgentCard() {
       <div class="config-row"><span>Agent ID:</span> <code>${agent.id}</code></div>
     </div>
     ${
-      tagBadges
-        ? `<div class="agent-tags-section">
+  tagBadges
+    ? `<div class="agent-tags-section">
       <div class="tags-label">Tags:</div>
       <div class="tags-list">${tagBadges}</div>
     </div>`
-        : ""
-    }
+    : ""
+}
     ${
-      capabilitiesBadges
-        ? `<div class="agent-capabilities">
+  capabilitiesBadges
+    ? `<div class="agent-capabilities">
       <div class="capabilities-label">Capabilities:</div>
       <div class="capabilities-list">${capabilitiesBadges}</div>
     </div>`
-        : ""
-    }
+    : ""
+}
   `;
 }
 
@@ -439,13 +442,26 @@ function renderMessages() {
   container.innerHTML = "";
 
   if (chat && chat.messages) {
-    chat.messages.forEach((m) => {
+    chat.messages.forEach((m, index) => {
       const div = document.createElement("div");
       div.className = `msg ${m.role}`;
 
       // Process the content for syntax highlighting
       const processedContent = processMessageContent(m.content);
-      div.innerHTML = processedContent;
+      
+      // Add repeat button for user messages only
+      if (m.role === "user") {
+        div.innerHTML = `
+          <div class="msg-content">
+            ${processedContent}
+          </div>
+          <button class="repeat-btn" title="Repeat this message" onclick="repeatMessage(${index})">
+            🔄
+          </button>
+        `;
+      } else {
+        div.innerHTML = processedContent;
+      }
 
       container.appendChild(div);
     });
@@ -510,6 +526,20 @@ async function sendMessage(text) {
   renderMessages();
   renderChats(); // Update chat list again
 }
+
+// Function to repeat a message by its index
+// eslint-disable-next-line no-unused-vars
+async function repeatMessage(messageIndex) {
+  const chat = getActiveChat();
+  if (chat && chat.messages && chat.messages[messageIndex]) {
+    const message = chat.messages[messageIndex];
+    if (message.role === "user") {
+      await sendMessage(message.content);
+    }
+  }
+}
+
+
 
 function selectAgent(id) {
   state.activeAgentId = id;

@@ -1,4 +1,7 @@
-"""Code Fixer Agent - Analyzes errors and suggests code fixes."""
+# SPDX-License-Identifier: MIT
+# Copyright (c) 2025 dr.max
+
+"""Code Fixer Agent - Analyzes and fixes code issues."""
 
 import re
 from datetime import datetime
@@ -535,10 +538,10 @@ if __name__ == "__main__":
             # Save the fixed code to a file
             fixed_file_path = self.project_root / "test_tools" / "divide_fixed.py"
             fixed_file_path.parent.mkdir(exist_ok=True)
-            
+
             with open(fixed_file_path, "w") as f:
                 f.write(fixed_code)
-            
+
             # Save the test code to a file
             test_file_path = self.project_root / "test_tools" / "test_divide.py"
             with open(test_file_path, "w") as f:
@@ -549,7 +552,7 @@ if __name__ == "__main__":
                 file_path=str(fixed_file_path),
                 error_content="Divide by zero error in divide function",
                 analysis="The divide function was incorrectly dividing by 0 instead of the second parameter. Fixed by changing the divisor from 0 to n2 and adding proper zero division handling.",
-                suggested_fix=fixed_code
+                suggested_fix=fixed_code,
             )
             self.analyses.append(analysis)
 
@@ -610,7 +613,7 @@ result = n1 / 0  # BUG: Should be n1 / n2
             file_path="test_tools/divide.py",
             error_content="Divide by zero error in divide function",
             analysis=analysis_text,
-            suggested_fix="Change result = n1 / 0 to result = n1 / n2 and add zero division handling"
+            suggested_fix="Change result = n1 / 0 to result = n1 / n2 and add zero division handling",
         )
         self.analyses.append(analysis)
 

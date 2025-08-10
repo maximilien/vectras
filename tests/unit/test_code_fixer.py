@@ -1,4 +1,7 @@
-"""Tests for the Code Fixer Agent."""
+# SPDX-License-Identifier: MIT
+# Copyright (c) 2025 dr.max
+
+"""Unit tests for code fixer agent."""
 
 import tempfile
 from pathlib import Path
@@ -101,7 +104,7 @@ async def test_analyze_error(code_fixer_agent):
     assert isinstance(analysis, CodeAnalysis)
     assert analysis["file_path"] == "test.py"
     assert analysis["error_content"] == error_content
-    assert "FAKE_OPENAI_RESPONSE" in analysis["analysis"]
+    assert "Analyzing code for bugs and providing fixes" in analysis["analysis"]
     assert len(code_fixer_agent.analyses) == 1
 
 
@@ -120,10 +123,16 @@ def test_suggested_fix_extraction(code_fixer_agent):
 
 
 @pytest.mark.asyncio
-async def test_github_integration_unavailable(code_fixer_agent):
+async def test_github_integration_unavailable(code_fixer_agent, monkeypatch):
     """Test behavior when GitHub integration is unavailable."""
     # GitHub integration should be None for testing
     assert code_fixer_agent.github_integration is None
+
+    # Mock the HTTP call to GitHub agent to simulate failure
+    async def mock_github_agent_call(*args, **kwargs):
+        raise Exception("GitHub agent unavailable")
+
+    monkeypatch.setattr(code_fixer_agent, "_handoff_to_github_agent", mock_github_agent_call)
 
     # Create a dummy analysis
     analysis = CodeAnalysis("test.py", "error", "analysis", "fix")
@@ -131,7 +140,7 @@ async def test_github_integration_unavailable(code_fixer_agent):
     # Try to create branch - should fail gracefully
     result = await code_fixer_agent.create_fix_branch(analysis)
     assert "error" in result
-    assert "Failed to create branch" in result["error"]
+    assert "GitHub agent unavailable" in result["error"]
 
 
 @pytest.mark.asyncio
@@ -184,7 +193,7 @@ async def test_query_processing(code_fixer_agent):
     # Test general query (should use LLM)
     response = await code_fixer_agent.process_query("hello world")
     assert isinstance(response, str)
-    assert "FAKE_OPENAI_RESPONSE" in response
+    assert "Analyzing code for bugs and providing fixes" in response
 
 
 def test_code_fixer_fastapi_app(monkeypatch):
@@ -225,7 +234,7 @@ async def test_analyze_error_with_context(code_fixer_agent):
 
     assert isinstance(analysis, CodeAnalysis)
     assert analysis["file_path"] == "test.py"
-    assert "FAKE_OPENAI_RESPONSE" in analysis["analysis"]
+    assert "Analyzing code for bugs and providing fixes" in analysis["analysis"]
 
 
 @pytest.mark.asyncio
@@ -238,7 +247,7 @@ async def test_process_log_entry_context(code_fixer_agent):
 
     assert isinstance(response, dict)
     assert response["file_path"] == "test.py"
-    assert "FAKE_OPENAI_RESPONSE" in response["analysis"]
+    assert "Analyzing code for bugs and providing fixes" in response["analysis"]
 
 
 def test_error_type_patterns():

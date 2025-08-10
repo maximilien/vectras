@@ -1,3 +1,6 @@
+# SPDX-License-Identifier: MIT
+# Copyright (c) 2025 dr.max
+
 """Configuration loading and management for Vectras agents."""
 
 from pathlib import Path

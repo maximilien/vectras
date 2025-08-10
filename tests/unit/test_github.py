@@ -1,4 +1,7 @@
-"""Unit tests for the GitHub agent."""
+# SPDX-License-Identifier: MIT
+# Copyright (c) 2025 dr.max
+
+"""Unit tests for GitHub agent."""
 
 from unittest.mock import AsyncMock, MagicMock, patch
 
