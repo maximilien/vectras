@@ -349,6 +349,47 @@ Focus on providing actionable, specific code fixes. Include:
             ),
         }
 
+    async def get_recent_fixes_summary(self, limit: int = 5) -> str:
+        """Get a user-friendly summary of recent fixes and analyses."""
+        if not self.analyses:
+            return "I haven't performed any code analyses or fixes yet. I'm ready to help analyze errors and suggest fixes!"
+
+        # Sort analyses by timestamp (most recent first)
+        recent_analyses = sorted(self.analyses, key=lambda x: x.get("timestamp", ""), reverse=True)[
+            :limit
+        ]
+
+        summary = f"## Recent Code Fixes & Analyses ({len(recent_analyses)} most recent)\n\n"
+
+        for i, analysis in enumerate(recent_analyses, 1):
+            file_path = analysis.get("file_path", "Unknown file")
+            error_content = analysis.get("error_content", "Unknown error")
+            analysis_text = analysis.get("analysis", "No analysis available")
+            severity = analysis.get("severity", "Unknown")
+            confidence = analysis.get("confidence", "Unknown")
+
+            # Truncate long content for readability
+            error_preview = (
+                error_content[:100] + "..." if len(error_content) > 100 else error_content
+            )
+            analysis_preview = (
+                analysis_text[:200] + "..." if len(analysis_text) > 200 else analysis_text
+            )
+
+            summary += f"### {i}. {file_path}\n"
+            summary += f"**Error:** {error_preview}\n"
+            summary += f"**Analysis:** {analysis_preview}\n"
+            summary += f"**Severity:** {severity} | **Confidence:** {confidence}\n\n"
+
+        # Add overall statistics
+        total_analyses = len(self.analyses)
+        summary += f"**Total analyses performed:** {total_analyses}\n"
+        summary += (
+            f"**Files analyzed:** {len(set(a.get('file_path', '') for a in self.analyses))}\n"
+        )
+
+        return summary
+
     async def _run_linting_on_changes(self, changed_files: List[str]) -> str:
         """Run linting on changed files using the Linting Agent."""
         try:
@@ -448,6 +489,16 @@ Focus on providing actionable, specific code fixes. Include:
         if "analysis summary" in query_lower:
             return await self.get_analysis_summary()
 
+        # Handle queries about recent fixes and work
+        if (
+            "recent fixes" in query_lower
+            or "what fixes" in query_lower
+            or "lately" in query_lower
+            or "recent work" in query_lower
+            or "what have you done" in query_lower
+        ):
+            return await self.get_recent_fixes_summary()
+
         # GitHub operations (handed off to GitHub agent)
         if "create branch" in query_lower or "create pr" in query_lower:
             if not self.analyses:
@@ -476,6 +527,7 @@ I can help with:
 - Suggesting specific code fixes
 - Creating GitHub branches and pull requests (via GitHub Agent)
 - Providing analysis summaries and reports
+- Showing recent fixes and analyses I've performed
 """,
             },
             {"role": "user", "content": query},
