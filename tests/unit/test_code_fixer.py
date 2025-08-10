@@ -1,4 +1,7 @@
-"""Tests for the Code Fixer Agent."""
+# SPDX-License-Identifier: MIT
+# Copyright (c) 2025 dr.max
+
+"""Unit tests for code fixer agent."""
 
 import tempfile
 from pathlib import Path
@@ -101,7 +104,7 @@ async def test_analyze_error(code_fixer_agent):
     assert isinstance(analysis, CodeAnalysis)
     assert analysis["file_path"] == "test.py"
     assert analysis["error_content"] == error_content
-    assert "FAKE_OPENAI_RESPONSE" in analysis["analysis"]
+    assert "Analyzing code for bugs and providing fixes" in analysis["analysis"]
     assert len(code_fixer_agent.analyses) == 1
 
 
@@ -184,7 +187,7 @@ async def test_query_processing(code_fixer_agent):
     # Test general query (should use LLM)
     response = await code_fixer_agent.process_query("hello world")
     assert isinstance(response, str)
-    assert "FAKE_OPENAI_RESPONSE" in response
+    assert "Analyzing code for bugs and providing fixes" in response
 
 
 def test_code_fixer_fastapi_app(monkeypatch):
@@ -225,7 +228,7 @@ async def test_analyze_error_with_context(code_fixer_agent):
 
     assert isinstance(analysis, CodeAnalysis)
     assert analysis["file_path"] == "test.py"
-    assert "FAKE_OPENAI_RESPONSE" in analysis["analysis"]
+    assert "Analyzing code for bugs and providing fixes" in analysis["analysis"]
 
 
 @pytest.mark.asyncio
@@ -238,7 +241,7 @@ async def test_process_log_entry_context(code_fixer_agent):
 
     assert isinstance(response, dict)
     assert response["file_path"] == "test.py"
-    assert "FAKE_OPENAI_RESPONSE" in response["analysis"]
+    assert "Analyzing code for bugs and providing fixes" in response["analysis"]
 
 
 def test_error_type_patterns():

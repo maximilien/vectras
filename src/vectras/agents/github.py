@@ -1,3 +1,8 @@
+# SPDX-License-Identifier: MIT
+# Copyright (c) 2025 dr.max
+
+"""GitHub Agent - Manages GitHub operations like creating branches and PRs."""
+
 import os
 import re
 from pathlib import Path
@@ -53,7 +58,10 @@ class GitHubIntegration:
                 response = client.post(new_ref_url, headers=self.headers, json=new_ref_data)
                 response.raise_for_status()
                 return True
-        except Exception:
+        except Exception as e:
+            print(f"GitHub API Error: {e}")
+            if "Resource not accessible by personal access token" in str(e):
+                print("Token lacks 'repo' scope. Please create a new token with 'repo' permissions.")
             return False
 
     def commit_files(self, branch_name: str, files: List[str], commit_message: str) -> bool:
@@ -136,6 +144,7 @@ class GitHubAgent(BaseAgent):
     def __init__(self, agent_id: str = "github"):
         super().__init__(agent_id)
         self.github_integration = None
+        self.pull_requests = []  # Track all created PRs
         self._init_github_integration()
 
     def _init_github_integration(self):
@@ -143,14 +152,126 @@ class GitHubAgent(BaseAgent):
         github_token = os.getenv("GITHUB_TOKEN") or getattr(
             self.config.settings, "github_token", None
         )
-        repo_owner = getattr(self.config.settings, "repo_owner", "maximilien")
-        repo_name = getattr(self.config.settings, "repo_name", "vectras")
+        repo_owner = os.getenv("GITHUB_ORG") or getattr(self.config.settings, "repo_owner", "maximilien")
+        repo_name = os.getenv("GITHUB_REPO") or getattr(self.config.settings, "repo_name", "vectras")
 
         if github_token:
             self.github_integration = GitHubIntegration(github_token, repo_owner, repo_name)
+            self.log_activity("github_integration_initialized", {"repo": f"{repo_owner}/{repo_name}"})
         else:
             self.github_integration = None
             self.log_activity("github_init_error", {"error": "No GitHub token found"})
+
+    def _track_pr_activity(self, pr_data: Dict[str, Any]):
+        """Track a new pull request activity."""
+        pr_info = {
+            "id": pr_data.get("id"),
+            "number": pr_data.get("number"),
+            "title": pr_data.get("title"),
+            "url": pr_data.get("html_url"),
+            "branch": pr_data.get("head", {}).get("ref"),
+            "base_branch": pr_data.get("base", {}).get("ref"),
+            "state": pr_data.get("state"),
+            "created_at": pr_data.get("created_at"),
+            "body": pr_data.get("body", "")[:200] + "..."
+            if len(pr_data.get("body", "")) > 200
+            else pr_data.get("body", ""),
+        }
+        self.pull_requests.append(pr_info)
+        self.log_activity("pr_created", pr_info)
+
+    async def _handle_recent_pr_request(self) -> str:
+        """Handle queries about recent/latest pull requests."""
+        if not self.pull_requests:
+            return "📋 No pull requests have been created yet. Use 'create pr' to create your first pull request!"
+
+        # Get the most recent PR
+        latest_pr = self.pull_requests[-1]
+
+        response = "📋 **Latest Pull Request:**\n\n"
+        response += f"**#{latest_pr['number']} - {latest_pr['title']}**\n"
+        response += f"🔗 URL: {latest_pr['url']}\n"
+        response += f"🌿 Branch: `{latest_pr['branch']}` → `{latest_pr['base_branch']}`\n"
+        response += f"📅 Created: {latest_pr['created_at']}\n"
+        response += f"📝 Description: {latest_pr['body']}\n\n"
+
+        if len(self.pull_requests) > 1:
+            response += f"📊 **Total PRs created:** {len(self.pull_requests)}\n"
+            response += "📋 **Recent PRs:**\n"
+            for pr in self.pull_requests[-3:]:  # Show last 3 PRs
+                response += f"  - #{pr['number']}: {pr['title']}\n"
+
+        return response
+
+    async def _handle_activities_request(self) -> str:
+        """Handle queries about recent activities."""
+        if not self.recent_activities:
+            return (
+                "📋 No recent activities recorded. I haven't performed any GitHub operations yet."
+            )
+
+        # Get the most recent activities (last 10)
+        recent_activities = (
+            self.recent_activities[-10:]
+            if len(self.recent_activities) > 10
+            else self.recent_activities
+        )
+
+        response = f"📋 **Recent GitHub Activities ({len(recent_activities)} activities):**\n\n"
+
+        for i, activity in enumerate(reversed(recent_activities), 1):
+            activity_type = activity.get("activity", "unknown")
+            details = activity.get("details", {})
+            timestamp = activity.get("timestamp", "unknown")
+
+            # Format the activity based on type
+            if activity_type == "pr_created":
+                response += f"**{i}. Created Pull Request**\n"
+                if "pr_number" in details:
+                    response += f"   📝 PR #{details['pr_number']}\n"
+                if "branch" in details:
+                    response += f"   🌿 Branch: {details['branch']}\n"
+            elif activity_type == "branch_created":
+                response += f"**{i}. Created Branch**\n"
+                if "branch" in details:
+                    response += f"   🌿 Branch: {details['branch']}\n"
+                if "base" in details:
+                    response += f"   📍 From: {details['base']}\n"
+            elif activity_type == "files_committed":
+                response += f"**{i}. Committed Files**\n"
+                if "branch" in details:
+                    response += f"   🌿 To branch: {details['branch']}\n"
+                if "files" in details:
+                    file_count = len(details["files"]) if isinstance(details["files"], list) else 1
+                    response += f"   📁 Files: {file_count} file(s)\n"
+            elif activity_type == "github_integration_initialized":
+                response += f"**{i}. GitHub Integration**\n"
+                if "repo" in details:
+                    response += f"   📦 Repository: {details['repo']}\n"
+            else:
+                response += f"**{i}. {activity_type.replace('_', ' ').title()}**\n"
+                if details:
+                    response += f"   📝 Details: {str(details)[:100]}{'...' if len(str(details)) > 100 else ''}\n"
+
+            response += f"   ⏰ Time: {timestamp}\n\n"
+
+        # Add summary statistics
+        total_activities = len(self.recent_activities)
+        pr_count = sum(1 for a in self.recent_activities if a.get("activity") == "pr_created")
+        branch_count = sum(
+            1 for a in self.recent_activities if a.get("activity") == "branch_created"
+        )
+        commit_count = sum(
+            1 for a in self.recent_activities if a.get("activity") == "files_committed"
+        )
+
+        response += "📊 **Activity Summary:**\n"
+        response += f"   • Total activities: {total_activities}\n"
+        response += f"   • Pull requests created: {pr_count}\n"
+        response += f"   • Branches created: {branch_count}\n"
+        response += f"   • File commits: {commit_count}\n"
+
+        return response
 
     async def process_query(self, query: str) -> str:
         """Process GitHub-related queries."""
@@ -162,12 +283,37 @@ class GitHubAgent(BaseAgent):
             return await self._handle_create_branch_request(query)
         elif "commit" in query_lower and "files" in query_lower:
             return await self._handle_commit_request(query)
-        elif "create pr" in query_lower or "pull request" in query_lower:
-            return await self._handle_create_pr_request(query)
         elif "divide" in query_lower and "tool" in query_lower:
             return await self._handle_divide_tool_pr_request(query)
+        elif "create pr" in query_lower or "pull request" in query_lower:
+            return await self._handle_create_pr_request(query)
         elif "list branches" in query_lower:
             return await self._handle_list_branches_request()
+        elif any(
+            phrase in query_lower
+            for phrase in [
+                "latest pr",
+                "recent pr",
+                "last pr",
+                "latest pull request",
+                "recent pull request",
+                "last pull request",
+            ]
+        ):
+            return await self._handle_recent_pr_request()
+        elif any(
+            phrase in query_lower
+            for phrase in [
+                "latest activities",
+                "recent activities",
+                "show your latest activities",
+                "show your recent activities",
+                "what have you been doing",
+                "your activities",
+                "show activities",
+            ]
+        ):
+            return await self._handle_activities_request()
         elif "help" in query_lower:
             return self._get_help_text()
         else:
@@ -181,6 +327,7 @@ class GitHubAgent(BaseAgent):
             "github_configured": self.github_integration is not None,
             "success_count": self.success_count,
             "error_count": self.error_count,
+            "pull_requests_created": len(self.pull_requests),
             "last_activity": self.last_activity.isoformat() if self.last_activity else None,
         }
 
@@ -188,6 +335,10 @@ class GitHubAgent(BaseAgent):
             status_info["repo"] = (
                 f"{self.github_integration.repo_owner}/{self.github_integration.repo_name}"
             )
+
+        if self.pull_requests:
+            latest_pr = self.pull_requests[-1]
+            status_info["latest_pr"] = f"#{latest_pr['number']} - {latest_pr['title']}"
 
         return f"GitHub Agent Status:\n{self._format_dict(status_info)}"
 
@@ -287,9 +438,8 @@ class GitHubAgent(BaseAgent):
         try:
             pr = self.github_integration.create_pull_request(branch_name, title, body)
             if pr:
-                self.log_activity(
-                    "pr_created", {"branch": branch_name, "pr_number": pr.get("number")}
-                )
+                # Track the PR activity
+                self._track_pr_activity(pr)
                 return f"✅ Successfully created PR #{pr.get('number')}: {title}\nURL: {pr.get('html_url')}"
             else:
                 self.log_activity("pr_creation_failed", {"branch": branch_name})
@@ -307,27 +457,29 @@ class GitHubAgent(BaseAgent):
             # Create branch for the fix
             branch_name = "fix-divide-tool-bug"
             base_branch = "main"
-            
+
             # Create the branch
             branch_success = self.github_integration.create_branch(branch_name, base_branch)
             if not branch_success:
                 return f"❌ Failed to create branch '{branch_name}'"
 
             # Prepare files to commit
-            files_to_commit = [
-                "test_tools/divide_fixed.py",
-                "test_tools/test_divide.py"
-            ]
-            
+            files_to_commit = ["test_tools/divide_fixed.py", "test_tools/test_divide.py"]
+
             # Check if files exist
             import os
+
             existing_files = [f for f in files_to_commit if os.path.exists(f)]
             if not existing_files:
                 return "❌ No divide tool files found. Please run the code fixer first."
 
             # Commit the files
-            commit_message = "Fix divide tool bug: Change divisor from 0 to n2 and add proper error handling"
-            commit_success = self.github_integration.commit_files(branch_name, existing_files, commit_message)
+            commit_message = (
+                "Fix divide tool bug: Change divisor from 0 to n2 and add proper error handling"
+            )
+            commit_success = self.github_integration.commit_files(
+                branch_name, existing_files, commit_message
+            )
             if not commit_success:
                 return f"❌ Failed to commit files to branch '{branch_name}'"
 
@@ -361,15 +513,13 @@ This fix resolves the critical bug that prevented the divide tool from functioni
 
             pr = self.github_integration.create_pull_request(branch_name, pr_title, pr_body)
             if pr:
-                self.log_activity(
-                    "divide_tool_pr_created", 
-                    {"branch": branch_name, "pr_number": pr.get("number")}
-                )
+                # Track the PR activity
+                self._track_pr_activity(pr)
                 return f"""✅ Successfully created divide tool fix PR!
 
 **Branch:** {branch_name}
-**PR #{pr.get('number')}:** {pr_title}
-**URL:** {pr.get('html_url')}
+**PR #{pr.get("number")}:** {pr_title}
+**URL:** {pr.get("html_url")}
 
 **Files Committed:**
 {chr(10).join(f"- {f}" for f in existing_files)}
@@ -414,6 +564,8 @@ Available commands:
 - create branch <name> [from <base>] - Create a new branch
 - commit files to <branch> with message "<message>" - Commit files to a branch
 - create pr from <branch> with title "<title>" [body "<body>"] - Create a pull request
+- latest pr / recent pr / last pr - Show details of the most recent pull request created
+- latest activities / recent activities / show your latest activities - Show recent GitHub activities
 - list branches - List all branches in the repository
 - help - Show this help text
 
@@ -422,6 +574,8 @@ Examples:
 - create branch hotfix from main
 - commit files to feature-123 with message "Fix bug in login"
 - create pr from feature-123 with title "Add new feature" body "This PR adds..."
+- latest pr
+- latest activities
 - list branches
 
 Note: Requires GITHUB_TOKEN environment variable to be set."""

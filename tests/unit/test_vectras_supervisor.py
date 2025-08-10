@@ -1,4 +1,7 @@
-"""Tests for the Vectras Supervisor Agent."""
+# SPDX-License-Identifier: MIT
+# Copyright (c) 2025 dr.max
+
+"""Unit tests for Vectras supervisor agent."""
 
 import tempfile
 from pathlib import Path

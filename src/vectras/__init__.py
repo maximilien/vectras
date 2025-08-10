@@ -1,3 +1,6 @@
+# SPDX-License-Identifier: MIT
+# Copyright (c) 2025 dr.max
+
 from __future__ import annotations
 
 from dotenv import find_dotenv, load_dotenv

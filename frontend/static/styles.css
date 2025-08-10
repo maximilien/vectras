@@ -1,3 +1,6 @@
+/* SPDX-License-Identifier: MIT */
+/* Copyright (c) 2025 dr.max */
+
 :root {
   --bg: #0b0e14;
   --bg-soft: #11151f;
@@ -177,9 +180,62 @@ main {
 .composer input { flex: 1; padding: 10px; border-radius: 8px; border: 1px solid var(--ring); background: var(--bg); color: var(--text); }
 .composer button { padding: 10px 14px; border-radius: 8px; border: 1px solid var(--ring); background: var(--accent); color: #0b1220; font-weight: 600; }
 
-.msg { margin: 8px 0; padding: 10px 12px; border-radius: 10px; max-width: 70%; }
+.msg { margin: 8px 0; padding: 10px 12px; border-radius: 10px; max-width: 70%; position: relative; }
 .msg.user { background: #1f2937; align-self: flex-end; }
 .msg.assistant { background: #0f172a; align-self: flex-start; }
+
+/* Repeat button styling */
+.repeat-btn {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  background: rgba(122, 162, 247, 0.1);
+  border: 1px solid rgba(122, 162, 247, 0.3);
+  color: var(--accent);
+  border-radius: 6px;
+  padding: 4px 6px;
+  font-size: 12px;
+  cursor: pointer;
+  opacity: 0;
+  transition: opacity 0.2s ease, background-color 0.2s ease;
+  z-index: 10;
+}
+
+.msg:hover .repeat-btn {
+  opacity: 1;
+}
+
+.repeat-btn:hover {
+  background: rgba(122, 162, 247, 0.2);
+  border-color: rgba(122, 162, 247, 0.5);
+}
+
+.msg-content {
+  padding-right: 30px; /* Make room for the repeat button */
+}
+
+/* Notification animations */
+@keyframes slideIn {
+  from {
+    transform: translateX(100%);
+    opacity: 0;
+  }
+  to {
+    transform: translateX(0);
+    opacity: 1;
+  }
+}
+
+@keyframes slideOut {
+  from {
+    transform: translateX(0);
+    opacity: 1;
+  }
+  to {
+    transform: translateX(100%);
+    opacity: 0;
+  }
+}
 
 .settings-panel {
   position: fixed; right: 12px; top: 56px; width: 320px; max-width: calc(100% - 24px);

@@ -1,3 +1,6 @@
+# SPDX-License-Identifier: MIT
+# Copyright (c) 2025 dr.max
+
 """Base agent class for all Vectras agents."""
 
 import os
@@ -158,11 +161,16 @@ class BaseAgent(ABC):
         # Use fake response for testing
         if os.getenv("VECTRAS_FAKE_OPENAI", "0") == "1":
             user_message = next((msg["content"] for msg in messages if msg["role"] == "user"), "")
-            system_message = next((msg["content"] for msg in messages if msg["role"] == "system"), "")
-            
+            system_message = next(
+                (msg["content"] for msg in messages if msg["role"] == "system"), ""
+            )
+
             # Provide better fake responses for testing agent
             if self.agent_id == "testing":
-                if "create a test tool" in system_message.lower() or "tool creator" in system_message.lower():
+                if (
+                    "create a test tool" in system_message.lower()
+                    or "tool creator" in system_message.lower()
+                ):
                     return """Here's a test tool with a divide by zero bug:
 
 ```python
@@ -188,7 +196,7 @@ async def test_agent_coordination():
     # Test implementation would go here
     assert True
 ```"""
-            
+
             # Provide better fake responses for other agents
             elif self.agent_id == "log-monitor":
                 if "error" in user_message.lower() or "handoff" in user_message.lower():
@@ -218,7 +226,7 @@ The bug was fixed by changing the division from `n1 / 0` to `n1 / n2` and adding
                 if "branch" in user_message.lower() or "pr" in user_message.lower():
                     return "Created branch 'fix-divide-tool-bug' and pull request #123 with the fix for the divide tool."
                 return "Managing GitHub operations and pull requests."
-            
+
             return f"[FAKE_OPENAI_RESPONSE] Agent {self.agent_id}: {user_message}"
 
         try:
