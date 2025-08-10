@@ -211,12 +211,12 @@ agents:
       max_conversations: 50
     settings:
       github_token: "${GITHUB_TOKEN}"
-      repo_owner: "maximilien"
-      repo_name: "vectras"
-      default_branch: "main"
-      branch_prefix: "vectras-"
-      pr_template: "PR created by Vectras GitHub Agent"
-      auto_merge: false
+      github_org: "${GITHUB_ORG}"
+      github_repo: "${GITHUB_REPO}"
+      github_branch: "main"
+      github_branch_prefix: "vectras-"
+      github_pr_template: "PR created by Vectras GitHub Agent"
+      github_auto_merge: false
 
 # Global settings
 settings:
@@ -225,4 +225,3 @@ settings:
   default_max_tokens: 1000
   api_timeout: 30
   enable_logging: true
-  github_token: "${GITHUB_TOKEN}"

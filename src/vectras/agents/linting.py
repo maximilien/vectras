@@ -1,4 +1,7 @@
-"""Linting agent for Vectras - runs linters and applies auto-fixes."""
+# SPDX-License-Identifier: MIT
+# Copyright (c) 2025 dr.max
+
+"""Linting Agent - Performs code quality checks and formatting."""
 
 import asyncio
 from pathlib import Path
@@ -37,7 +40,9 @@ class LintingAgent(BaseAgent):
         """Process a query for the linting agent."""
         query_lower = query.lower()
 
-        if "lint" in query_lower or "check" in query_lower:
+        if "divide" in query_lower and "tool" in query_lower:
+            return await self._handle_divide_tool_linting(query, context)
+        elif "lint" in query_lower or "check" in query_lower:
             return await self._handle_lint_request(query, context)
         elif "fix" in query_lower or "format" in query_lower:
             return await self._handle_fix_request(query, context)
@@ -45,8 +50,6 @@ class LintingAgent(BaseAgent):
             return await self._handle_status_request(query, context)
         elif "files" in query_lower and "changed" in query_lower:
             return await self._handle_changed_files_request(query, context)
-        elif "divide" in query_lower and "tool" in query_lower:
-            return await self._handle_divide_tool_linting(query, context)
         else:
             return await self._handle_general_query(query, context)
 
@@ -147,30 +150,30 @@ class LintingAgent(BaseAgent):
             # Check if the fixed divide tool exists
             fixed_file_path = Path("./test_tools/divide_fixed.py")
             test_file_path = Path("./test_tools/test_divide.py")
-            
+
             if not fixed_file_path.exists():
                 return "❌ Fixed divide tool not found. Please run the code fixer first."
-            
+
             if not test_file_path.exists():
                 return "❌ Test file not found. Please run the code fixer first."
-            
+
             # Lint both files
             results = []
-            
+
             # Lint the fixed divide function
             divide_result = await self._lint_file(fixed_file_path)
             results.append(f"**Divide Function Linting:**\n{divide_result}")
-            
+
             # Lint the test file
             test_result = await self._lint_file(test_file_path)
             results.append(f"**Test File Linting:**\n{test_result}")
-            
+
             # Check for any issues
             if "❌" in divide_result or "❌" in test_result:
-                return f"⚠️ Linting issues found:\n\n" + "\n\n".join(results)
+                return "⚠️ Linting issues found:\n\n" + "\n\n".join(results)
             else:
-                return f"✅ All divide tool files passed linting!\n\n" + "\n\n".join(results)
-                
+                return "✅ All divide tool files passed linting!\n\n" + "\n\n".join(results)
+
         except Exception as e:
             self.log_activity("divide_tool_linting_error", {"error": str(e)})
             return f"❌ Error linting divide tool: {str(e)}"

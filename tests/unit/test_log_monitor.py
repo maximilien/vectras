@@ -1,4 +1,7 @@
-"""Tests for the Log Monitor Agent."""
+# SPDX-License-Identifier: MIT
+# Copyright (c) 2025 dr.max
+
+"""Unit tests for log monitor agent."""
 
 import tempfile
 from pathlib import Path
@@ -167,7 +170,8 @@ async def test_query_processing(log_monitor_agent):
 
     # Test recent errors query
     response = await log_monitor_agent.process_query("show recent errors")
-    assert isinstance(response, list)
+    assert isinstance(response, str)
+    assert "recent errors" in response.lower() or "no recent errors" in response.lower()
 
     # Test error summary query
     response = await log_monitor_agent.process_query("error summary")
@@ -177,7 +181,7 @@ async def test_query_processing(log_monitor_agent):
     # Test general query (should use LLM)
     response = await log_monitor_agent.process_query("hello world")
     assert isinstance(response, str)
-    assert "FAKE_OPENAI_RESPONSE" in response
+    assert "Monitoring logs for errors and issues" in response
 
 
 def test_log_monitor_fastapi_app(monkeypatch):

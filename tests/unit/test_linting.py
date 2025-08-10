@@ -1,3 +1,6 @@
+# SPDX-License-Identifier: MIT
+# Copyright (c) 2025 dr.max
+
 """Unit tests for linting agent."""
 
 from unittest.mock import AsyncMock, MagicMock, patch

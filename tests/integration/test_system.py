@@ -1,3 +1,8 @@
+# SPDX-License-Identifier: MIT
+# Copyright (c) 2025 dr.max
+
+"""Integration tests for system functionality."""
+
 import os
 import subprocess
 import sys

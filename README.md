@@ -15,11 +15,19 @@ A multi-agent AI system for automated code testing, error detection, and fix gen
    ./start.sh
    ```
 
-3. **Run End-to-End Tests:**
+3. **Run Tests:**
    ```bash
+   # Run all tests (unit + integration)
    ./test.sh
-   # Or run specific e2e test:
-   python tests/integration/run_e2e_test.py
+   
+   # Run specific test types
+   ./test.sh unit          # Unit tests only
+   ./test.sh integration   # Integration tests only
+   ./test.sh e2e           # Comprehensive e2e tests (requires OpenAI API key)
+   ./test.sh e2e -v        # E2e tests with verbose output
+   
+   # Or run specific e2e test manually:
+   python -m pytest tests/integration/test_comprehensive_e2e.py -v
    ```
 
 4. **Monitor Logs:**
@@ -66,15 +74,24 @@ Vectras consists of 5 specialized AI agents working together:
 ### **End-to-End Integration Tests**
 ```bash
 # Run comprehensive e2e test with real OpenAI
-python tests/integration/run_e2e_test.py
+./test.sh e2e
 
-# Run with verbose output
-cd tests/integration && python -m pytest test_e2e_agent_flow.py -v -s
+# Run e2e tests with verbose output
+./test.sh e2e -v
+
+# Run manually with verbose output
+python -m pytest tests/integration/test_comprehensive_e2e.py -v -s
+
+# Run the comprehensive e2e test directly
+python -m pytest tests/integration/test_comprehensive_e2e.py
 ```
 
 ### **Unit Tests**
 ```bash
 # Run all unit tests
+./test.sh unit
+
+# Run manually
 pytest tests/unit/
 
 # Run specific test
@@ -160,7 +177,10 @@ vectras/
 ./start.sh
 
 # Run tests
-./test.sh
+./test.sh          # All tests
+./test.sh unit     # Unit tests only
+./test.sh e2e      # E2E tests (requires OpenAI API key)
+./test.sh e2e -v   # E2E tests with verbose output
 
 # Stop all services
 ./stop.sh

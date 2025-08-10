@@ -1,4 +1,7 @@
-"""Log Monitor Agent - Monitors application logs for errors and issues."""
+# SPDX-License-Identifier: MIT
+# Copyright (c) 2025 dr.max
+
+"""Log Monitor Agent - Monitors log files for errors and issues."""
 
 import asyncio
 import re
@@ -188,12 +191,31 @@ class LogMonitorAgent(BaseAgent):
         try:
             log_files = list(self.logs_directory.glob("*.log"))
             for log_file in log_files:
-                await self.process_log_file(str(log_file))
+                await self.process_log_file_for_scan(str(log_file))
 
             self.log_activity("existing_logs_scanned", {"files_count": len(log_files)})
 
         except Exception as e:
             self.log_activity("scan_error", {"error": str(e)})
+
+    async def process_log_file_for_scan(self, file_path: str):
+        """Process a log file for scanning (reads entire file)."""
+        try:
+            path = Path(file_path)
+            if not path.exists():
+                return
+
+            with open(path, "r", encoding="utf-8", errors="ignore") as f:
+                lines = f.readlines()
+
+            # Process all lines
+            for line_number, line in enumerate(lines, 1):
+                line = line.strip()
+                if line:
+                    await self.process_log_line(file_path, line_number, line)
+
+        except Exception as e:
+            self.log_activity("process_file_error", {"file": file_path, "error": str(e)})
 
     async def process_log_file(self, file_path: str):
         """Process a log file for new entries."""
@@ -355,7 +377,7 @@ class LogMonitorAgent(BaseAgent):
 
         # Status queries
         if "status" in query_lower:
-            return {
+            status_info = {
                 "monitoring": self.monitoring,
                 "logs_directory": str(self.logs_directory),
                 "files_monitored": len(self.file_positions),
@@ -363,13 +385,46 @@ class LogMonitorAgent(BaseAgent):
                 "error_patterns": self.error_patterns,
             }
 
+            # Add recent error summary if any errors exist
+            if self.recent_errors:
+                latest_error = self.recent_errors[-1]  # Most recent error
+                status_info["latest_error"] = {
+                    "file": latest_error["file_path"],
+                    "line": latest_error["line_number"],
+                    "severity": latest_error["severity"],
+                    "content": latest_error["content"][:100] + "..."
+                    if len(latest_error["content"]) > 100
+                    else latest_error["content"],
+                }
+
+            return status_info
+
         # Log entry queries
-        if "show last" in query_lower and "log entries" in query_lower:
-            # Extract number from query (e.g., "show last 10 log entries")
+        # Check for log entry queries with more flexible matching
+        if (
+            "log" in query_lower
+            and "entries" in query_lower
+            and ("last" in query_lower or "show" in query_lower)
+        ) or ("show log last" in query_lower):
+            # Extract number from query (e.g., "show last 10 log entries" or "show log last 10 entries")
             import re
 
-            match = re.search(r"show last (\d+) log entries", query_lower)
-            limit = int(match.group(1)) if match else 10
+            # Try different patterns to extract the number
+            patterns = [
+                r"show last (\d+) log entries",
+                r"show log last (\d+) entries",
+                r"last (\d+) log entries",
+                r"log last (\d+) entries",
+                r"(\d+) entries",
+            ]
+
+            limit = 10  # default
+            for pattern in patterns:
+                match = re.search(pattern, query_lower)
+                if match:
+                    limit = int(match.group(1))
+                    break
+
             return await self.get_recent_log_entries(limit)
 
         if "recent log entries" in query_lower or "show log entries" in query_lower:
@@ -377,10 +432,33 @@ class LogMonitorAgent(BaseAgent):
             return await self.get_recent_log_entries(limit)
 
         # Error queries
-        if "recent errors" in query_lower or "show errors" in query_lower:
+        if (
+            "recent errors" in query_lower
+            or "show errors" in query_lower
+            or "show recent errors" in query_lower
+        ):
             limit = context.get("limit", 20) if context else 20
             severity = context.get("severity") if context else None
-            return await self.get_recent_errors(limit, severity)
+            errors = await self.get_recent_errors(limit, severity)
+
+            if not errors:
+                return "📋 No recent errors found. All systems are running smoothly! ✅"
+
+            # Format the response in a readable way
+            response = f"🚨 **Recent Errors ({len(errors)} found):**\n\n"
+
+            for i, error in enumerate(errors, 1):
+                response += (
+                    f"**{i}. Error in {error['file_path']} (line {error['line_number']}):**\n"
+                )
+                response += f"📅 **Time:** {error['timestamp']}\n"
+                response += f"⚠️ **Severity:** {error['severity'].upper()}\n"
+                if error["error_type"]:
+                    response += f"🔍 **Type:** {error['error_type']}\n"
+                response += f"📝 **Content:** {error['content'][:200]}{'...' if len(error['content']) > 200 else ''}\n"
+                response += "\n"
+
+            return response
 
         if "error summary" in query_lower:
             hours = context.get("hours", 24) if context else 24
@@ -395,9 +473,17 @@ class LogMonitorAgent(BaseAgent):
             await self.stop_monitoring()
             return {"status": "monitoring stopped"}
 
-        if "scan logs" in query_lower or "check logs" in query_lower:
+        if (
+            "scan logs" in query_lower
+            or "check logs" in query_lower
+            or "scan for errors" in query_lower
+        ):
             await self.scan_existing_logs()
-            return {"status": "log scan completed", "recent_errors": len(self.recent_errors)}
+            errors_count = len(self.recent_errors)
+            if errors_count > 0:
+                return f"🔍 **Log scan completed!** Found {errors_count} errors. Use 'show recent errors' to see details."
+            else:
+                return "🔍 **Log scan completed!** No errors found. All systems are running smoothly! ✅"
 
         # Handle handoff to code fixer requests
         if "handoff" in query_lower and "code-fixer" in query_lower:
@@ -409,10 +495,12 @@ class LogMonitorAgent(BaseAgent):
                     latest_error["file_path"],
                     latest_error["line_number"],
                     latest_error["content"],
-                    latest_error["timestamp"]
+                    latest_error["timestamp"],
                 )
                 await self.notify_code_fixer(log_entry)
-                return f"✅ Handed off error to code-fixer agent: {latest_error['content'][:100]}..."
+                return (
+                    f"✅ Handed off error to code-fixer agent: {latest_error['content'][:100]}..."
+                )
             else:
                 return "ℹ️ No recent errors found to handoff to code-fixer."
 
@@ -426,7 +514,7 @@ class LogMonitorAgent(BaseAgent):
                     latest_error["file_path"],
                     latest_error["line_number"],
                     latest_error["content"],
-                    latest_error["timestamp"]
+                    latest_error["timestamp"],
                 )
                 await self.notify_code_fixer(log_entry)
                 return f"✅ Found error and handed off to code-fixer agent: {latest_error['content'][:100]}..."
