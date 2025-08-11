@@ -13,6 +13,12 @@ A multi-agent AI system for automated code testing, error detection, and fix gen
 2. **Start All Agents:**
    ```bash
    ./start.sh
+   
+   # Or use specific commands:
+   ./start.sh start      # Start all services (default)
+   ./start.sh restart    # Restart all services
+   ./start.sh status     # Check service status
+   ./start.sh help       # Show usage information
    ```
 
 3. **Run Tests:**
@@ -33,6 +39,16 @@ A multi-agent AI system for automated code testing, error detection, and fix gen
 4. **Monitor Logs:**
    ```bash
    ./tools/tail-logs.sh all
+   ```
+
+5. **Stop Services:**
+   ```bash
+   ./stop.sh
+   
+   # Or use specific commands:
+   ./stop.sh stop        # Stop all services (default)
+   ./stop.sh status      # Check service status
+   ./stop.sh help        # Show usage information
    ```
 
 ## 🤖 Multi-Agent System
@@ -175,6 +191,8 @@ vectras/
 ```bash
 # Start all services
 ./start.sh
+./start.sh restart    # Restart all services
+./start.sh status     # Check service status
 
 # Run tests
 ./test.sh          # All tests
@@ -184,6 +202,7 @@ vectras/
 
 # Stop all services
 ./stop.sh
+./stop.sh status     # Check service status
 ```
 
 ## 📊 Status
