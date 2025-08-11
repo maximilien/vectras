@@ -50,7 +50,9 @@ class AgentManager:
             print("Please set your OpenAI API key:")
             print("export OPENAI_API_KEY=your_api_key_here")
             return False
-        env.setdefault("GITHUB_TOKEN", "fake_token_for_testing")
+        # Don't override GITHUB_TOKEN if it's already set
+        if "GITHUB_TOKEN" not in env:
+            env["GITHUB_TOKEN"] = "fake_token_for_testing"
 
         for agent_name, config in self.agents.items():
             try:

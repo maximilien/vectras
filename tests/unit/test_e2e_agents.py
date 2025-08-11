@@ -285,7 +285,13 @@ class TestGitHubAgent:
                 assert "fix-divide-tool-bug" in result
 
                 # Verify GitHub methods were called
-                mock_github.create_branch.assert_called_once_with("fix-divide-tool-bug", "main")
+                # The branch name now includes a timestamp, so we need to check the pattern
+                create_branch_call = mock_github.create_branch.call_args
+                assert create_branch_call is not None
+                branch_name = create_branch_call[0][0]  # First argument
+                assert branch_name.startswith("fix-divide-tool-bug-")
+                assert create_branch_call[0][1] == "main"  # Second argument should be "main"
+
                 mock_github.commit_files.assert_called_once()
                 mock_github.create_pull_request.assert_called_once()
 

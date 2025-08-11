@@ -123,6 +123,55 @@ def create_app() -> FastAPI:
         except Exception as e:
             return {"agents": [], "error": str(e)}
 
+    @app.get("/api/config")
+    async def get_config():
+        """Get full configuration from config.yaml."""
+        try:
+            config_path = root_dir / "config.yaml"
+            if config_path.exists():
+                with open(config_path, "r") as f:
+                    config = yaml.safe_load(f)
+                
+                # Return safe configuration data
+                safe_config = {
+                    "default_queries": config.get("default_queries", []),
+                    "settings": config.get("settings", {}),
+                    "agents": []
+                }
+                
+                # Add agents with full configuration (excluding sensitive data)
+                for agent in config.get("agents", []):
+                    # Create a copy of the agent config
+                    agent_config = agent.copy()
+                    
+                    # Remove or mask sensitive fields
+                    sensitive_fields = ['system_prompt']  # Add more if needed
+                    for field in sensitive_fields:
+                        if field in agent_config:
+                            agent_config[field] = "[REDACTED]"
+                    
+                    # Check for sensitive values in all fields
+                    for key, value in list(agent_config.items()):
+                        if _is_sensitive_field(key, value):
+                            agent_config[key] = "[REDACTED]"
+                    
+                    safe_config["agents"].append(agent_config)
+                
+                return safe_config
+            else:
+                return {
+                    "default_queries": ["status", "latest actions", "up time"],
+                    "settings": {},
+                    "agents": []
+                }
+        except Exception as e:
+            return {
+                "default_queries": ["status", "latest actions", "up time"],
+                "settings": {},
+                "agents": [],
+                "error": str(e)
+            }
+
     return app
 
 

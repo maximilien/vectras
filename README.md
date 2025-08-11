@@ -94,6 +94,7 @@ Vectras consists of 5 specialized AI agents working together:
 - **Smart Scrolling**: Remembers scroll position per conversation
 - **Responsive Design**: Smooth animations and modern styling
 - **Settings Panel**: System status monitoring with scrollable content
+- **Vectras Settings**: Configuration viewer with global settings, default queries, and detailed agent configurations
 
 ### **Agent Management**
 - Real-time agent status monitoring
