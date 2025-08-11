@@ -3,6 +3,21 @@
 
 const $ = (s) => document.querySelector(s);
 
+// Agent icon mapping - using monochrome/simplified versions for better UI integration
+function getAgentIcon(agentId) {
+  const iconMap = {
+    "supervisor": "👑",
+    "log-monitor": "📊", 
+    "coding": "🔧",
+    "linting": "✅",
+    "testing": "🧪",
+    "github": "🐙",
+    // Fallback for unknown agents
+    "default": "🤖"
+  };
+  return iconMap[agentId] || iconMap.default;
+}
+
 const state = {
   chats: [],
   activeChatId: null,
@@ -12,6 +27,9 @@ const state = {
   leftWidth: 260,
   rightWidth: 260,
   serviceStatus: {}, // Store service health status
+  agentCardCollapsed: false, // Store agent card collapse state
+  isTyping: false, // Track if agent is currently responding
+  chatScrollPositions: {}, // Store scroll position for each chat
 };
 
 // Load agents from the API
@@ -45,8 +63,6 @@ async function loadAgents() {
     renderAgents();
     renderAgentCard();
   } catch (error) {
-    // eslint-disable-next-line no-console
-    console.error("Failed to load agents:", error);
     // Use fallback agent
     state.agents = [
       {
@@ -76,9 +92,12 @@ function renderAgents() {
       ? a.tags.map((tag) => `<span class="tag-badge">${tag}</span>`).join(" ")
       : "";
 
+    // Get agent icon
+    const agentIcon = getAgentIcon(a.id);
+
     li.innerHTML = `
       <div class="agent-item">
-        <div class="agent-name">${a.name}</div>
+        <div class="agent-name">${agentIcon} ${a.name}</div>
         <div class="agent-tags">${tagBadges}</div>
         <div class="agent-desc">${a.description}</div>
       </div>
@@ -98,6 +117,19 @@ function renderAgentCard() {
   }
   card.classList.remove("hidden");
 
+  // Get agent icon
+  const agentIcon = getAgentIcon(agent.id);
+
+  // Update the header with agent name and status
+  const agentName = $("#agent-name");
+  const agentStatus = $("#agent-status");
+  if (agentName) agentName.textContent = `${agentIcon} ${agent.name}`;
+  if (agentStatus) agentStatus.textContent = "Active";
+
+  // Update the content area
+  const content = $("#agent-card-content");
+  if (!content) return;
+
   const capabilitiesBadges = agent.capabilities
     ? agent.capabilities
       .map((cap) => `<span class="capability-badge">${cap}</span>`)
@@ -108,11 +140,7 @@ function renderAgentCard() {
     ? agent.tags.map((tag) => `<span class="tag-badge">${tag}</span>`).join("")
     : "";
 
-  card.innerHTML = `
-    <div class="agent-header">
-      <strong>${agent.name}</strong>
-      <span class="status-badge active">Active</span>
-    </div>
+  content.innerHTML = `
     <div class="agent-description">${agent.description}</div>
     <div class="agent-config">
       <div class="config-row"><span>Port:</span> <code>${agent.port}</code></div>
@@ -435,7 +463,45 @@ function escapeHtml(text) {
   return div.innerHTML;
 }
 
-function renderMessages() {
+// Utility function to scroll chat to bottom
+function scrollToBottom() {
+  const container = $("#chat");
+  if (container) {
+    // Use scrollIntoView for smoother scrolling
+    container.scrollTop = container.scrollHeight;
+    
+    // Also focus on input for immediate interaction
+    const input = $("#input");
+    if (input) {
+      input.focus();
+    }
+  }
+}
+
+// Save current scroll position for the active chat
+function saveScrollPosition() {
+  const container = $("#chat");
+  const chat = getActiveChat();
+  if (container && chat) {
+    const scrollTop = container.scrollTop;
+    state.chatScrollPositions[chat.id] = scrollTop;
+  }
+}
+
+// Restore scroll position for the active chat
+function restoreScrollPosition() {
+  const container = $("#chat");
+  const chat = getActiveChat();
+  if (container && chat && state.chatScrollPositions[chat.id] !== undefined) {
+    const savedPosition = state.chatScrollPositions[chat.id];
+    container.scrollTop = savedPosition;
+  } else {
+    // If no saved position, scroll to bottom
+    scrollToBottom();
+  }
+}
+
+function renderMessages(forceScrollToBottom = false) {
   ensureActiveChat();
   const chat = getActiveChat();
   const container = $("#chat");
@@ -467,25 +533,63 @@ function renderMessages() {
     });
   }
 
-  // Auto-scroll to bottom with smooth behavior
+  // Restore scroll position after DOM is fully rendered, unless we want to force scroll to bottom
   setTimeout(() => {
-    container.scrollTop = container.scrollHeight;
+    if (forceScrollToBottom) {
+      scrollToBottom();
+    } else {
+      restoreScrollPosition();
+    }
+  }, 50);
 
-    // Apply syntax highlighting to any code blocks
+  // Apply syntax highlighting after a brief delay
+  setTimeout(() => {
     // eslint-disable-next-line no-undef
     if (typeof Prism !== "undefined") {
       // eslint-disable-next-line no-undef
       Prism.highlightAllUnder(container);
     }
   }, 10);
+
+  // Show typing indicator if agent is responding
+  if (state.isTyping) {
+    const activeAgent = state.agents.find((a) => a.id === state.activeAgentId);
+    const agentName = activeAgent ? activeAgent.name : "Agent";
+    const agentIcon = getAgentIcon(state.activeAgentId);
+    
+    const typingDiv = document.createElement("div");
+    typingDiv.className = "msg assistant typing-indicator";
+    typingDiv.innerHTML = `
+      <div class="msg-content">
+        <span>${agentIcon} ${agentName} is responding</span>
+        <div class="typing-dots">
+          <div class="typing-dot"></div>
+          <div class="typing-dot"></div>
+          <div class="typing-dot"></div>
+        </div>
+      </div>
+    `;
+    container.appendChild(typingDiv);
+    
+    // Always scroll to show typing indicator
+    scrollToBottom();
+  }
 }
 
 async function sendMessage(text) {
   ensureActiveChat();
   const chat = getActiveChat();
-  chat.messages.push({ role: "user", content: text });
-  renderMessages();
+  chat.messages.push({ 
+    role: "user", 
+    content: text,
+    timestamp: new Date().toISOString()
+  });
+  renderMessages(true); // Force scroll to bottom
   renderChats(); // Update chat list to show new message count
+
+  // Show typing indicator
+  state.isTyping = true;
+  renderMessages(true); // Force scroll to bottom
 
   try {
     // Get the selected agent's port
@@ -519,11 +623,20 @@ async function sendMessage(text) {
       role: "assistant",
       content: reply,
       agent: activeAgent ? activeAgent.name : "Unknown Agent",
+      timestamp: new Date().toISOString()
     });
   } catch (e) {
-    chat.messages.push({ role: "assistant", content: `Error: ${e.message}` });
+    chat.messages.push({ 
+      role: "assistant", 
+      content: `Error: ${e.message}`,
+      timestamp: new Date().toISOString()
+    });
+  } finally {
+    // Hide typing indicator
+    state.isTyping = false;
   }
-  renderMessages();
+  
+  renderMessages(true); // Force scroll to bottom
   renderChats(); // Update chat list again
 }
 
@@ -542,6 +655,9 @@ async function repeatMessage(messageIndex) {
 
 
 function selectAgent(id) {
+  // Save current scroll position before switching
+  saveScrollPosition();
+  
   state.activeAgentId = id;
 
   // Filter chats for this agent or create a new chat if none exist
@@ -564,38 +680,30 @@ function selectAgent(id) {
   renderMessages(); // Load messages for the selected chat
   saveState();
 
-  // Auto-scroll to bottom and focus on input for immediate interaction
+  // Focus on input for immediate interaction
   setTimeout(() => {
-    const container = $("#chat");
-    if (container) {
-      container.scrollTop = container.scrollHeight;
-    }
-
-    // Focus on the input field for immediate typing
-    const input = $("#input");
-    if (input) {
-      input.focus();
-    }
-  }, 100); // Small delay to ensure rendering is complete
-}
-
-function selectChat(chatId) {
-  state.activeChatId = chatId;
-  renderMessages();
-  renderChats(); // Update active styling
-
-  // Auto-scroll to bottom and focus on input
-  setTimeout(() => {
-    const container = $("#chat");
-    if (container) {
-      container.scrollTop = container.scrollHeight;
-    }
-
     const input = $("#input");
     if (input) {
       input.focus();
     }
   }, 50);
+}
+
+function selectChat(chatId) {
+  // Save current scroll position before switching
+  saveScrollPosition();
+  
+  state.activeChatId = chatId;
+  renderMessages();
+  renderChats(); // Update active styling
+
+  // Focus on input for immediate interaction
+  setTimeout(() => {
+    const input = $("#input");
+    if (input) {
+      input.focus();
+    }
+  }, 25);
 }
 
 function editChatTitle(chatId) {
@@ -645,6 +753,60 @@ function bindEvents() {
     sendMessage(value);
   });
 
+  // Recent messages functionality
+  const recentBtn = $("#recent-btn");
+  const recentPanel = $("#recent-panel");
+  const recentClose = $("#recent-close");
+
+  if (recentBtn) {
+    recentBtn.addEventListener("click", (e) => {
+      e.stopPropagation();
+      showRecentMessages();
+    });
+  }
+
+  if (recentClose) {
+    recentClose.addEventListener("click", (e) => {
+      e.stopPropagation();
+      hideRecentMessages();
+    });
+  }
+
+  // Click outside to dismiss recent panel
+  document.addEventListener("click", (e) => {
+    if (recentPanel && recentPanel.getAttribute("aria-hidden") !== "true") {
+      if (!recentPanel.contains(e.target) && !recentBtn.contains(e.target)) {
+        hideRecentMessages();
+      }
+    }
+  });
+
+  // Prevent clicks inside recent panel from closing it
+  if (recentPanel) {
+    recentPanel.addEventListener("click", (e) => {
+      e.stopPropagation();
+    });
+  }
+
+  // Close recent panel with Escape key
+  document.addEventListener("keydown", (e) => {
+    if (e.key === "Escape" && recentPanel && recentPanel.getAttribute("aria-hidden") !== "true") {
+      hideRecentMessages();
+    }
+  });
+
+  // Add scroll event listener to save scroll positions
+  const chatContainer = $("#chat");
+  if (chatContainer) {
+    chatContainer.addEventListener("scroll", () => {
+      // Debounce scroll events to avoid too many saves
+      clearTimeout(chatContainer.scrollTimeout);
+      chatContainer.scrollTimeout = setTimeout(() => {
+        saveScrollPosition();
+      }, 100);
+    });
+  }
+
   // Hamburger menu
   const burger = $("#hamburger");
   const burgerMenu = $("#hamburger-menu");
@@ -672,6 +834,10 @@ function bindEvents() {
       renderMessages();
       saveState();
       burgerMenu.setAttribute("aria-hidden", "true");
+      // Ensure scroll to bottom for new chat
+      setTimeout(() => {
+        scrollToBottom();
+      }, 25);
     });
   }
 
@@ -683,6 +849,10 @@ function bindEvents() {
       renderChats();
       renderMessages();
       saveState();
+      // Ensure scroll to bottom for new chat
+      setTimeout(() => {
+        scrollToBottom();
+      }, 25);
     });
   }
   if (menuClear) {
@@ -703,8 +873,16 @@ function bindEvents() {
   const settingsBtn = $("#settings");
   const settingsPanel = $("#settings-panel");
   const settingsClose = $("#settings-close");
+  
+  function closeSettingsPanel() {
+    if (settingsPanel) {
+      settingsPanel.setAttribute("aria-hidden", "true");
+    }
+  }
+  
   if (settingsBtn && settingsPanel) {
-    settingsBtn.addEventListener("click", () => {
+    settingsBtn.addEventListener("click", (e) => {
+      e.stopPropagation(); // Prevent event bubbling
       const isHidden = settingsPanel.getAttribute("aria-hidden") !== "false";
       settingsPanel.setAttribute("aria-hidden", isHidden ? "false" : "true");
 
@@ -714,11 +892,37 @@ function bindEvents() {
       }
     });
   }
+  
   if (settingsClose) {
-    settingsClose.addEventListener("click", () =>
-      settingsPanel.setAttribute("aria-hidden", "true"),
-    );
+    settingsClose.addEventListener("click", (e) => {
+      e.stopPropagation(); // Prevent event bubbling
+      closeSettingsPanel();
+    });
   }
+  
+  // Click outside to dismiss settings panel
+  document.addEventListener("click", (e) => {
+    if (settingsPanel && settingsPanel.getAttribute("aria-hidden") !== "true") {
+      // Check if click is outside the settings panel
+      if (!settingsPanel.contains(e.target) && !settingsBtn.contains(e.target)) {
+        closeSettingsPanel();
+      }
+    }
+  });
+  
+  // Prevent clicks inside settings panel from closing it
+  if (settingsPanel) {
+    settingsPanel.addEventListener("click", (e) => {
+      e.stopPropagation();
+    });
+  }
+  
+  // Close settings panel with Escape key
+  document.addEventListener("keydown", (e) => {
+    if (e.key === "Escape" && settingsPanel && settingsPanel.getAttribute("aria-hidden") !== "true") {
+      closeSettingsPanel();
+    }
+  });
 
   // Menu settings button
   if (menuSettings) {
@@ -729,6 +933,27 @@ function bindEvents() {
         checkAllServices(); // Check health when opening via menu
       }
       burgerMenu.setAttribute("aria-hidden", "true");
+    });
+  }
+
+  // Agent card collapse functionality
+  const agentCardToggle = $("#agent-card-toggle");
+  const agentCardContent = $("#agent-card-content");
+
+  if (agentCardToggle && agentCardContent) {
+    // Apply saved state on initialization
+    agentCardContent.classList.toggle("collapsed", state.agentCardCollapsed);
+    agentCardToggle.setAttribute("aria-expanded", String(!state.agentCardCollapsed));
+    agentCardToggle.textContent = state.agentCardCollapsed ? "⌄" : "⌃";
+    agentCardToggle.title = state.agentCardCollapsed ? "Expand agent details" : "Collapse agent details";
+
+    agentCardToggle.addEventListener("click", () => {
+      state.agentCardCollapsed = !state.agentCardCollapsed;
+      agentCardContent.classList.toggle("collapsed", state.agentCardCollapsed);
+      agentCardToggle.setAttribute("aria-expanded", String(!state.agentCardCollapsed));
+      agentCardToggle.textContent = state.agentCardCollapsed ? "⌄" : "⌃";
+      agentCardToggle.title = state.agentCardCollapsed ? "Expand agent details" : "Collapse agent details";
+      saveState(); // Save the collapse state
     });
   }
 
@@ -839,6 +1064,9 @@ async function init() {
   // Load agents from API first
   await loadAgents();
 
+  // Load default queries from config
+  await loadDefaultQueries();
+
   renderChats();
   renderMessages();
   bindEvents();
@@ -868,6 +1096,8 @@ function saveState() {
     activeChatId: state.activeChatId,
     chatCounter: state.chatCounter,
     activeAgentId: state.activeAgentId,
+    agentCardCollapsed: state.agentCardCollapsed,
+    chatScrollPositions: state.chatScrollPositions, // Save scroll positions
   };
   localStorage.setItem("vectras-state", JSON.stringify(stateToSave));
 }
@@ -881,6 +1111,8 @@ function loadState() {
       state.activeChatId = parsedState.activeChatId || null;
       state.chatCounter = parsedState.chatCounter || 0;
       state.activeAgentId = parsedState.activeAgentId || "agent-1";
+      state.agentCardCollapsed = parsedState.agentCardCollapsed || false;
+      state.chatScrollPositions = parsedState.chatScrollPositions || {}; // Load scroll positions
     }
   } catch (e) {
     // console.warn("Failed to load saved state:", e);
@@ -930,15 +1162,15 @@ async function checkServiceHealth(serviceName, port) {
 
 async function checkAllServices() {
   const services = [
-    { name: "ui", port: 8120, displayName: "UI" },
-    { name: "api", port: 8121, displayName: "API" },
-    { name: "mcp", port: 8122, displayName: "MCP" },
-    { name: "supervisor", port: 8123, displayName: "Supervisor" },
-    { name: "log-monitor", port: 8124, displayName: "Log Monitor" },
-    { name: "code-fixer", port: 8125, displayName: "Code Fixer" },
-    { name: "linting", port: 8127, displayName: "Linting" },
-    { name: "testing", port: 8126, displayName: "Testing" },
-    { name: "github", port: 8128, displayName: "GitHub" },
+    { name: "ui", port: 8120, displayName: "🖥️ UI" },
+    { name: "api", port: 8121, displayName: "🔌 API" },
+    { name: "mcp", port: 8122, displayName: "🔗 MCP" },
+    { name: "supervisor", port: 8123, displayName: "👑 Supervisor" },
+    { name: "log-monitor", port: 8124, displayName: "📊 Log Monitor" },
+    { name: "coding", port: 8125, displayName: "🔧 Coding Agent" },
+    { name: "linting", port: 8127, displayName: "✅ Linting" },
+    { name: "testing", port: 8126, displayName: "🧪 Testing" },
+    { name: "github", port: 8128, displayName: "🐙 GitHub" },
   ];
 
   // Set all services to checking status
@@ -1002,6 +1234,111 @@ function bindStatusEvents() {
       refreshBtn.textContent = "🔄 Refresh Status";
     });
   }
+}
+
+// Default queries for all agents (will be loaded from config)
+let DEFAULT_QUERIES = [
+  "status",
+  "latest actions", 
+  "up time"
+];
+
+// Load default queries from config
+async function loadDefaultQueries() {
+  try {
+    const response = await fetch("/api/config");
+    const data = await response.json();
+    if (data.default_queries) {
+      DEFAULT_QUERIES = data.default_queries;
+    }
+  } catch (error) {
+    // Failed to load default queries from config, using defaults
+  }
+}
+
+// Recent messages functionality
+function showRecentMessages() {
+  const recentPanel = $("#recent-panel");
+  const recentMessages = $("#recent-messages");
+  const defaultQueries = $("#default-queries");
+  
+  // Get current chat
+  const chat = getActiveChat();
+  if (!chat) return;
+  
+  // Clear previous content
+  recentMessages.innerHTML = "";
+  defaultQueries.innerHTML = "";
+  
+  // Get recent user messages (last 5)
+  const userMessages = chat.messages
+    .filter(m => m.role === "user")
+    .slice(-5)
+    .reverse(); // Show most recent first
+  
+  // Populate recent messages
+  userMessages.forEach((message) => {
+    const messageDiv = document.createElement("div");
+    messageDiv.className = "recent-message-item";
+    messageDiv.innerHTML = `
+      <div class="recent-message-text">${escapeHtml(message.content)}</div>
+      <div class="recent-message-time">${formatMessageTime(message.timestamp)}</div>
+    `;
+    
+    messageDiv.addEventListener("click", () => {
+      selectRecentMessage(message.content);
+    });
+    
+    recentMessages.appendChild(messageDiv);
+  });
+  
+  // Populate default queries
+  DEFAULT_QUERIES.forEach(query => {
+    const queryDiv = document.createElement("div");
+    queryDiv.className = "default-query-item";
+    queryDiv.textContent = query;
+    
+    queryDiv.addEventListener("click", () => {
+      selectRecentMessage(query);
+    });
+    
+    defaultQueries.appendChild(queryDiv);
+  });
+  
+  // Show panel
+  recentPanel.setAttribute("aria-hidden", "false");
+}
+
+function hideRecentMessages() {
+  const recentPanel = $("#recent-panel");
+  recentPanel.setAttribute("aria-hidden", "true");
+}
+
+function selectRecentMessage(message) {
+  const input = $("#input");
+  if (input) {
+    input.value = message;
+    input.focus();
+  }
+  hideRecentMessages();
+}
+
+function formatMessageTime(timestamp) {
+  if (!timestamp) return "Just now";
+  
+  const date = new Date(timestamp);
+  const now = new Date();
+  const diffMs = now - date;
+  const diffMins = Math.floor(diffMs / 60000);
+  const diffHours = Math.floor(diffMs / 3600000);
+  const diffDays = Math.floor(diffMs / 86400000);
+  
+  if (diffMins < 1) return "Just now";
+  if (diffMins < 60) return `${diffMins}m ago`;
+  if (diffHours < 24) return `${diffHours}h ago`;
+  if (diffDays < 7) return `${diffDays}d ago`;
+  
+  return date.toLocaleDateString();
 }
 
 init();

@@ -31,7 +31,7 @@ class SimpleE2ETestManager:
         self.agent_ports = {
             "testing": 8126,
             "log-monitor": 8124,
-            "code-fixer": 8125,
+            "coding": 8125,
             "linting": 8127,
             "github": 8128,
         }
@@ -81,9 +81,9 @@ class SimpleE2ETestManager:
         status_response = await self.query_agent("testing", "status")
         print(f"✅ Testing agent status: {status_response['response'][:200]}...")
 
-        # Test code fixer capabilities
-        fixer_response = await self.query_agent("code-fixer", "what can you do?")
-        print(f"✅ Code fixer capabilities: {fixer_response['response'][:200]}...")
+        # Test coding agent capabilities
+        fixer_response = await self.query_agent("coding", "what can you do?")
+        print(f"✅ Coding agent capabilities: {fixer_response['response'][:200]}...")
 
         # Test linting agent capabilities
         linting_response = await self.query_agent("linting", "what do you do?")
@@ -121,19 +121,19 @@ if __name__ == "__main__":
         return "buggy_code_created"
 
     async def step_3_code_fixer_analysis(self) -> str:
-        """Step 3: Code fixer analyzes the buggy code."""
-        print("\n🔧 Step 3: Code fixer analyzing buggy code...")
+        """Step 3: Coding agent analyzes the buggy code."""
+        print("\n🔧 Step 3: Coding agent analyzing buggy code...")
 
         # Analyze the buggy code
         analysis_response = await self.query_agent(
-            "code-fixer",
+            "coding",
             "analyze this code: def add_numbers(a, b): return 42  # This should return a + b",
         )
         print(f"✅ Code analysis: {analysis_response['response'][:200]}...")
 
         # Verify we get a meaningful response
         assert len(analysis_response["response"]) > 10, (
-            "Code fixer should provide meaningful analysis"
+            "Coding agent should provide meaningful analysis"
         )
 
         return "code_analysis_completed"

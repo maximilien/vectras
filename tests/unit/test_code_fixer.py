@@ -75,7 +75,7 @@ def test_severity_assessment():
 
 def test_code_fixer_initialization(code_fixer_agent):
     """Test code fixer agent initializes correctly."""
-    assert code_fixer_agent.agent_id == "code-fixer"
+    assert code_fixer_agent.agent_id == "coding"
     assert code_fixer_agent.config is not None
     assert code_fixer_agent.project_root is not None
     assert isinstance(code_fixer_agent.analyses, list)
@@ -215,7 +215,7 @@ def test_code_fixer_fastapi_app(monkeypatch):
             assert response.status_code == 200
             data = response.json()
             assert "agent_id" in data
-            assert data["agent_id"] == "code-fixer"
+            assert data["agent_id"] == "coding"
 
             # Test query endpoint
             response = client.post("/query", json={"query": "status"})

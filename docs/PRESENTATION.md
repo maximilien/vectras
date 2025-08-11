@@ -29,7 +29,7 @@ A **multi-agent AI system** that automates:
 
 ```
 ┌─────────────────┐    ┌─────────────────┐    ┌─────────────────┐
-│   Testing       │    │   Log Monitor   │    │   Code Fixer    │
+│   Testing       │    │   Log Monitor   │    │   Coding        │
 │   Agent         │    │   Agent         │    │   Agent         │
 │   (Port 8126)   │    │   (Port 8124)   │    │   (Port 8125)   │
 └─────────────────┘    └─────────────────┘    └─────────────────┘
@@ -76,11 +76,11 @@ def divide(n1, n2):
 - `FATAL` - Critical failures
 - `CRITICAL` - System issues
 
-**Automatically triggers handoffs** to code fixer when issues are detected.
+**Automatically triggers handoffs** to coding agent when issues are detected.
 
 ---
 
-# 🔧 Code Fixer Agent
+# 🔧 Coding Agent
 
 **Analyzes errors and suggests automated fixes**
 
@@ -92,6 +92,21 @@ def divide(n1, n2):
 5. **Coordinates** with testing & linting agents
 
 **Result:** Automated pull requests with tested fixes.
+
+---
+
+# 🎨 Modern Frontend Interface
+
+**Polished UI/UX for seamless agent interaction**
+
+**Key Features:**
+- **Collapsible Panes**: Maximize chat space
+- **Recent Messages**: Quick access to conversation history
+- **Visual Indicators**: Agent icons and typing animations
+- **Smart Scrolling**: Remembers position per conversation
+- **Real-time Status**: Live agent health monitoring
+
+**Configurable via `config.yaml`** for custom default queries.
 
 ---
 
@@ -122,7 +137,7 @@ def divide(n1, n2):
 - **Pull request creation** with descriptions
 - **Repository operations** and maintenance
 
-**Seamless integration** with code fixer for automated PRs.
+**Seamless integration** with coding agent for automated PRs.
 
 ---
 

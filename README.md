@@ -67,7 +67,7 @@ Vectras consists of 5 specialized AI agents working together:
 - Handles error pattern recognition
 - Triggers alerts and handoffs to other agents
 
-### **Code Fixer Agent** (Port 8125)
+### **Coding Agent** (Port 8125)
 - Analyzes code issues and stack traces
 - Suggests automated fixes
 - Creates GitHub branches and pull requests
@@ -83,7 +83,23 @@ Vectras consists of 5 specialized AI agents working together:
 - Manages version control operations
 - Creates branches and pull requests
 - Handles repository operations
-- Integrates with code fixer for automated PRs
+- Integrates with coding agent for automated PRs
+
+## 🎨 Frontend Features
+
+### **Modern UI/UX**
+- **Collapsible Panes**: Agent card, chat list, and agent list can be collapsed for more space
+- **Recent Messages**: Quick access to last 5 messages and common queries per agent
+- **Visual Indicators**: Agent icons, typing indicators, and status badges
+- **Smart Scrolling**: Remembers scroll position per conversation
+- **Responsive Design**: Smooth animations and modern styling
+- **Settings Panel**: System status monitoring with scrollable content
+
+### **Agent Management**
+- Real-time agent status monitoring
+- Agent-specific chat conversations
+- Configurable default queries via `config.yaml`
+- Intuitive agent selection and switching
 
 ## 🧪 Testing
 

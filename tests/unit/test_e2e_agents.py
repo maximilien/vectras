@@ -129,7 +129,7 @@ class TestLogMonitorAgent:
             # Verify handoff was called
             mock_handoff.assert_called_once()
             call_args = mock_handoff.call_args
-            assert call_args[0][0] == "code-fixer"  # target agent
+            assert call_args[0][0] == "coding"  # target agent
             assert "analyze" in call_args[0][1].lower()  # query contains analyze
 
 

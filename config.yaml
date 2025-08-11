@@ -1,6 +1,12 @@
 # Vectras Agents Configuration
 # This file defines the available agents and their configurations
 
+# Default queries for recent messages feature
+default_queries:
+  - "status"
+  - "latest actions"
+  - "up time"
+
 agents:
   - id: "supervisor"
     name: "Supervisor Agent"
@@ -67,14 +73,14 @@ agents:
         - "CRITICAL"
       max_log_size: "10MB"
 
-  - id: "code-fixer"
-    name: "Code Fixer Agent"
+  - id: "coding"
+    name: "Coding Agent"
     description: "Analyzes errors and code issues, suggests fixes, and creates GitHub branches and PRs"
     enabled: true
     model: "gpt-4o-mini"
     temperature: 0.1
     max_tokens: 3000
-    system_prompt: "You are the Vectras code fixer agent. You analyze stack traces and errors, examine the codebase to understand issues, suggest code fixes, and create GitHub branches with pull requests for the suggested changes."
+    system_prompt: "You are the Vectras coding agent. You analyze stack traces and errors, examine the codebase to understand issues, suggest code fixes, and create GitHub branches with pull requests for the suggested changes."
     capabilities:
       - "Error Analysis"
       - "Code Analysis"
@@ -90,7 +96,7 @@ agents:
     memory:
       enabled: true
       type: "sqlite"
-      database_path: "./data/code_fixer_memory.db"
+      database_path: "./data/coding_memory.db"
       session_ttl: 7200
       max_conversations: 75
     settings:
@@ -110,7 +116,7 @@ agents:
     model: "gpt-4o-mini"
     temperature: 0.1
     max_tokens: 2000
-    system_prompt: "You are the Vectras linting agent. You run linters on code changes, apply auto-fixes, and ensure code quality standards. You work with the code fixer agent to finalize fixes before creating PRs."
+    system_prompt: "You are the Vectras linting agent. You run linters on code changes, apply auto-fixes, and ensure code quality standards. You work with the coding agent to finalize fixes before creating PRs."
     capabilities:
       - "Code Linting"
       - "Auto-Fixing"

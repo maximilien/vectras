@@ -267,7 +267,7 @@ class LogMonitorAgent(BaseAgent):
                     },
                 )
 
-                # Notify code fixer agent for critical errors
+                # Notify coding agent for critical errors
                 if log_entry["severity"] == "critical" or log_entry["error_type"] in [
                     "exception",
                     "syntax_error",
@@ -275,7 +275,7 @@ class LogMonitorAgent(BaseAgent):
                     await self.notify_code_fixer(log_entry)
 
     async def notify_code_fixer(self, log_entry: LogEntry):
-        """Notify the code fixer agent about a critical error."""
+        """Notify the coding agent about a critical error."""
         try:
             context = {
                 "log_entry": log_entry,
@@ -287,7 +287,7 @@ class LogMonitorAgent(BaseAgent):
                 f"Analyze and fix error from {log_entry['file_path']}: {log_entry['content'][:500]}"
             )
 
-            await self.handoff_to_agent("code-fixer", query, context)
+            await self.handoff_to_agent("coding", query, context)
 
             self.log_activity(
                 "code_fixer_notified",
@@ -485,8 +485,8 @@ class LogMonitorAgent(BaseAgent):
             else:
                 return "🔍 **Log scan completed!** No errors found. All systems are running smoothly! ✅"
 
-        # Handle handoff to code fixer requests
-        if "handoff" in query_lower and "code-fixer" in query_lower:
+        # Handle handoff to coding agent requests
+        if "handoff" in query_lower and "coding" in query_lower:
             recent_errors = await self.get_recent_errors(5)
             if recent_errors:
                 # Find the most recent error
@@ -498,9 +498,7 @@ class LogMonitorAgent(BaseAgent):
                     latest_error["timestamp"],
                 )
                 await self.notify_code_fixer(log_entry)
-                return (
-                    f"✅ Handed off error to code-fixer agent: {latest_error['content'][:100]}..."
-                )
+                return f"✅ Handed off error to coding agent: {latest_error['content'][:100]}..."
             else:
                 return "ℹ️ No recent errors found to handoff to code-fixer."
 
@@ -517,7 +515,7 @@ class LogMonitorAgent(BaseAgent):
                     latest_error["timestamp"],
                 )
                 await self.notify_code_fixer(log_entry)
-                return f"✅ Found error and handed off to code-fixer agent: {latest_error['content'][:100]}..."
+                return f"✅ Found error and handed off to coding agent: {latest_error['content'][:100]}..."
             else:
                 return "ℹ️ No recent errors found to handoff to code-fixer."
 
@@ -538,7 +536,7 @@ I can help with:
 - Analyzing error patterns and trends
 - Providing error summaries and reports
 - Notifying other agents about critical issues
-- Handing off errors to code-fixer agent
+        - Handing off errors to coding agent
 """,
             },
             {"role": "user", "content": query},

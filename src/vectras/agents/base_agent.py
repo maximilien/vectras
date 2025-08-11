@@ -200,9 +200,9 @@ async def test_agent_coordination():
             # Provide better fake responses for other agents
             elif self.agent_id == "log-monitor":
                 if "error" in user_message.lower() or "handoff" in user_message.lower():
-                    return "Error detected in divide tool execution. Handing off to code-fixer agent for analysis and fix."
+                    return "Error detected in divide tool execution. Handing off to coding agent for analysis and fix."
                 return "Monitoring logs for errors and issues."
-            elif self.agent_id == "code-fixer":
+            elif self.agent_id == "coding":
                 if "divide" in user_message.lower() or "bug" in user_message.lower():
                     return """Fixed the divide tool bug:
 

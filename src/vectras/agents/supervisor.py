@@ -140,7 +140,7 @@ class SupervisorAgent(BaseAgent):
 
     async def check_agent_status(self, agent_id: str) -> Optional[Dict[str, Any]]:
         """Check status of a specific agent."""
-        agent_ports = {"log-monitor": 8124, "code-fixer": 8125}
+        agent_ports = {"log-monitor": 8124, "coding": 8125}
 
         port = agent_ports.get(agent_id)
         if not port:
@@ -170,7 +170,7 @@ class SupervisorAgent(BaseAgent):
             else:
                 # Return status of all agents
                 statuses = {}
-                for agent_id in ["log-monitor", "code-fixer"]:
+                for agent_id in ["log-monitor", "coding"]:
                     statuses[agent_id] = await self.check_agent_status(agent_id)
                 return statuses
 
@@ -195,7 +195,7 @@ class SupervisorAgent(BaseAgent):
             return await self.handoff_to_agent("log-monitor", query, context)
 
         if "fix code" in query_lower or "analyze error" in query_lower:
-            return await self.handoff_to_agent("code-fixer", query, context)
+            return await self.handoff_to_agent("coding", query, context)
 
         # Default LLM response with system context
         messages = [
@@ -206,7 +206,7 @@ class SupervisorAgent(BaseAgent):
                 
 Current project: {self.project_root.name}
 Available capabilities: {", ".join(self.config.capabilities)}
-Other agents available: log-monitor, code-fixer
+Other agents available: log-monitor, coding
 
 I can help with:
 - Checking system and agent status

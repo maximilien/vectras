@@ -19,7 +19,7 @@ Starts all Vectras services with enhanced features:
   - MCP Server - Port 8122
   - Supervisor Agent - Port 8123
   - Log Monitor Agent - Port 8124
-  - Code Fixer Agent - Port 8125
+  - Coding Agent - Port 8125
   - Testing Agent - Port 8126
   - Linting Agent - Port 8127
   - GitHub Agent - Port 8128

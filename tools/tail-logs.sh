@@ -5,7 +5,7 @@ cmd=${1:-all}
 
 status() {
   echo "Ports: API ${VECTRAS_API_PORT:-8121}, MCP ${VECTRAS_MCP_PORT:-8122}, UI ${VECTRAS_UI_PORT:-8120}"
-  echo "Agents: Supervisor ${VECTRAS_AGENT_PORT:-8123}, Log Monitor 8124, Code Fixer 8125, Linting 8127, Testing 8126, GitHub 8128"
+  echo "Agents: Supervisor ${VECTRAS_AGENT_PORT:-8123}, Log Monitor 8124, Coding 8125, Linting 8127, Testing 8126, GitHub 8128"
   
   # Check core services
   for port in ${VECTRAS_UI_PORT:-8120} ${VECTRAS_API_PORT:-8121} ${VECTRAS_MCP_PORT:-8122}; do
@@ -28,7 +28,7 @@ status() {
 
 case "$cmd" in
   all)
-    tail -f logs/ui.log logs/api.log logs/mcp.log logs/supervisor.log logs/log-monitor.log logs/code-fixer.log logs/linting.log logs/testing.log logs/github.log || true
+    tail -f logs/ui.log logs/api.log logs/mcp.log logs/supervisor.log logs/log-monitor.log logs/coding.log logs/linting.log logs/testing.log logs/github.log || true
     ;;
   ui)
     tail -f logs/ui.log || true
@@ -45,9 +45,9 @@ case "$cmd" in
   log-monitor)
     tail -f logs/log-monitor.log || true
     ;;
-  code-fixer)
-    tail -f logs/code-fixer.log || true
-    ;;
+      coding)
+      tail -f logs/coding.log || true
+      ;;
   linting)
     tail -f logs/linting.log || true
     ;;
@@ -58,7 +58,7 @@ case "$cmd" in
     tail -f logs/github.log || true
     ;;
   agents)
-    tail -f logs/supervisor.log logs/log-monitor.log logs/code-fixer.log logs/linting.log logs/testing.log logs/github.log || true
+    tail -f logs/supervisor.log logs/log-monitor.log logs/coding.log logs/linting.log logs/testing.log logs/github.log || true
     ;;
   core)
     tail -f logs/ui.log logs/api.log logs/mcp.log || true
@@ -67,7 +67,7 @@ case "$cmd" in
     status
     ;;
   *)
-    echo "ℹ️  Usage: $0 [all|ui|api|mcp|supervisor|log-monitor|code-fixer|linting|testing|github|agents|core|status]"
+    echo "ℹ️  Usage: $0 [all|ui|api|mcp|supervisor|log-monitor|coding|linting|testing|github|agents|core|status]"
     echo ""
     echo "Commands:"
     echo "  all         - Tail all service logs"
@@ -76,7 +76,7 @@ case "$cmd" in
     echo "  mcp         - Tail MCP logs"
     echo "  supervisor  - Tail Supervisor agent logs"
     echo "  log-monitor - Tail Log Monitor agent logs"
-    echo "  code-fixer  - Tail Code Fixer agent logs"
+    echo "  coding      - Tail Coding agent logs"
     echo "  linting     - Tail Linting agent logs"
     echo "  testing     - Tail Testing agent logs"
     echo "  github      - Tail GitHub agent logs"

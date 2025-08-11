@@ -156,7 +156,7 @@ async def test_notify_code_fixer(log_monitor_agent):
         # Should have called handoff
         mock_handoff.assert_called_once()
         args, kwargs = mock_handoff.call_args
-        assert args[0] == "code-fixer"  # target agent
+        assert args[0] == "coding"  # target agent
         assert "SyntaxError" in args[1]  # query contains error
 
 

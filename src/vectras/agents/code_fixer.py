@@ -1,7 +1,7 @@
 # SPDX-License-Identifier: MIT
 # Copyright (c) 2025 dr.max
 
-"""Code Fixer Agent - Analyzes and fixes code issues."""
+"""Coding Agent - Analyzes and fixes code issues."""
 
 import re
 from datetime import datetime
@@ -62,7 +62,7 @@ class CodeFixerAgent(BaseAgent):
     """Agent that analyzes code errors and suggests fixes."""
 
     def __init__(self):
-        super().__init__("code-fixer")
+        super().__init__("coding")
         self.project_root = get_project_root()
         self.analyses: List[CodeAnalysis] = []
         self.github_integration = None  # Initialize to None for testing
@@ -289,7 +289,7 @@ Focus on providing actionable, specific code fixes. Include:
 **Confidence:** {analysis["confidence"]}
 
 ---
-*This PR was automatically created by Vectras Code Fixer Agent*
+*This PR was automatically created by Vectras Coding Agent*
 """
 
             pr_result = await self._handoff_to_github_agent(
@@ -449,7 +449,7 @@ Focus on providing actionable, specific code fixes. Include:
             return f"❌ Error calling GitHub agent: {str(e)}"
 
     async def process_query(self, query: str, context: Optional[Dict[str, Any]] = None) -> Any:
-        """Process queries for the code fixer agent."""
+        """Process queries for the coding agent."""
         query_lower = query.lower()
 
         # Status queries
@@ -677,7 +677,7 @@ code_fixer = CodeFixerAgent()
 
 
 def create_app():
-    """Create FastAPI app for the code fixer agent."""
+    """Create FastAPI app for the coding agent."""
     return code_fixer.create_app()
 
 

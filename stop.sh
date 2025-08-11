@@ -18,7 +18,7 @@ Services:
   - MCP Server
   - Supervisor Agent
   - Log Monitor Agent
-  - Code Fixer Agent
+  - Coding Agent
   - Linting Agent
   - Testing Agent
   - GitHub Agent
@@ -59,7 +59,7 @@ status() {
 
   echo "- Ports:"
   local ports=(${VECTRAS_UI_PORT:-8120} ${VECTRAS_API_PORT:-8121} ${VECTRAS_MCP_PORT:-8122} ${VECTRAS_AGENT_PORT:-8123} 8124 8125 8126 8127 8128)
-  local port_names=("UI" "API" "MCP" "Supervisor" "Log Monitor" "Code Fixer" "Testing" "Linting" "GitHub")
+      local port_names=("UI" "API" "MCP" "Supervisor" "Log Monitor" "Coding" "Testing" "Linting" "GitHub")
   for i in "${!ports[@]}"; do
     local port=${ports[$i]}
     local name=${port_names[$i]}

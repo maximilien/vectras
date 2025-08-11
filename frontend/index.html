@@ -36,13 +36,46 @@
         </aside>
 
         <main class="center-pane">
-          <div id="agent-card" class="agent-card hidden"></div>
+          <div id="agent-card" class="agent-card hidden">
+            <div class="agent-card-header">
+              <div class="agent-card-title">
+                <div class="agent-header">
+                  <strong id="agent-name">Agent Name</strong>
+                  <span class="status-badge active" id="agent-status">Active</span>
+                </div>
+              </div>
+              <button id="agent-card-toggle" class="collapse-btn" aria-controls="agent-card-content" aria-expanded="true" title="Collapse agent details">⌃</button>
+            </div>
+            <div id="agent-card-content" class="agent-card-content">
+              <!-- Agent card content will be inserted here by JavaScript -->
+            </div>
+          </div>
           <div id="chat" class="chat"></div>
           <form id="composer" class="composer">
+            <button type="button" id="recent-btn" class="recent-btn" title="Recent messages">🕒</button>
             <input id="input" type="text" placeholder="Type a message..." autocomplete="off" />
             <button type="submit">Send</button>
           </form>
         </main>
+
+        <!-- Recent Messages Popup -->
+        <div id="recent-panel" class="recent-panel" aria-hidden="true">
+          <div class="recent-header">
+            <strong>Recent Messages</strong>
+            <button id="recent-close" aria-label="close">✕</button>
+          </div>
+          <div class="recent-body">
+            <div class="recent-messages" id="recent-messages">
+              <!-- Recent messages will be populated here -->
+            </div>
+            <div class="recent-defaults">
+              <h4>Quick Actions</h4>
+              <div class="default-queries" id="default-queries">
+                <!-- Default queries will be populated here -->
+              </div>
+            </div>
+          </div>
+        </div>
 
         <aside class="right-pane" id="right-pane">
           <div class="pane-header">
@@ -71,17 +104,17 @@
             <h3>🖥️ Core Services</h3>
             <div class="service-group" id="core-services">
               <div class="service-item">
-                <span class="service-name">UI</span>
+                <span class="service-name">🖥️ UI</span>
                 <span class="service-url">localhost:8120</span>
                 <span class="service-status" data-service="ui">⏳ Checking...</span>
               </div>
               <div class="service-item">
-                <span class="service-name">API</span>
+                <span class="service-name">🔌 API</span>
                 <span class="service-url">localhost:8121</span>
                 <span class="service-status" data-service="api">⏳ Checking...</span>
               </div>
               <div class="service-item">
-                <span class="service-name">MCP</span>
+                <span class="service-name">🔗 MCP</span>
                 <span class="service-url">localhost:8122</span>
                 <span class="service-status" data-service="mcp">⏳ Checking...</span>
               </div>
@@ -92,32 +125,32 @@
             <h3>🤖 Agents</h3>
             <div class="service-group" id="agents">
               <div class="service-item">
-                <span class="service-name">Supervisor</span>
+                <span class="service-name">👑 Supervisor</span>
                 <span class="service-url">localhost:8123</span>
                 <span class="service-status" data-service="supervisor">⏳ Checking...</span>
               </div>
               <div class="service-item">
-                <span class="service-name">Log Monitor</span>
+                <span class="service-name">📊 Log Monitor</span>
                 <span class="service-url">localhost:8124</span>
                 <span class="service-status" data-service="log-monitor">⏳ Checking...</span>
               </div>
               <div class="service-item">
-                <span class="service-name">Code Fixer</span>
+                <span class="service-name">🔧 Coding</span>
                 <span class="service-url">localhost:8125</span>
-                <span class="service-status" data-service="code-fixer">⏳ Checking...</span>
+                <span class="service-status" data-service="coding">⏳ Checking...</span>
               </div>
               <div class="service-item">
-                <span class="service-name">Linting</span>
+                <span class="service-name">✅ Linting</span>
                 <span class="service-url">localhost:8127</span>
                 <span class="service-status" data-service="linting">⏳ Checking...</span>
               </div>
               <div class="service-item">
-                <span class="service-name">Testing</span>
+                <span class="service-name">🧪 Testing</span>
                 <span class="service-url">localhost:8126</span>
                 <span class="service-status" data-service="testing">⏳ Checking...</span>
               </div>
               <div class="service-item">
-                <span class="service-name">GitHub</span>
+                <span class="service-name">🐙 GitHub</span>
                 <span class="service-url">localhost:8128</span>
                 <span class="service-status" data-service="github">⏳ Checking...</span>
               </div>
