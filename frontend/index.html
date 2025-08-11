@@ -94,15 +94,16 @@
       <button id="left-handle" class="edge-handle" aria-label="Open chats" title="Open chats">›</button>
       <button id="right-handle" class="edge-handle right" aria-label="Open agents" title="Open agents">‹</button>
 
-      <div id="settings-panel" class="settings-panel" aria-hidden="true">
+      <!-- System Status Panel (for gear wheel button) -->
+      <div id="system-status-panel" class="settings-panel system-status-panel" aria-hidden="true">
         <div class="settings-header">
           <strong>System Status</strong>
-          <button id="settings-close" aria-label="close">✕</button>
+          <button id="system-status-close" aria-label="close">✕</button>
         </div>
         <div class="settings-body">
           <div class="status-section">
             <h3>🖥️ Core Services</h3>
-            <div class="service-group" id="core-services">
+            <div class="service-group" id="core-services-status">
               <div class="service-item">
                 <span class="service-name">🖥️ UI</span>
                 <span class="service-url">localhost:8120</span>
@@ -123,7 +124,7 @@
 
           <div class="status-section">
             <h3>🤖 Agents</h3>
-            <div class="service-group" id="agents">
+            <div class="service-group" id="agents-status">
               <div class="service-item">
                 <span class="service-name">👑 Supervisor</span>
                 <span class="service-url">localhost:8123</span>
@@ -162,18 +163,144 @@
             <div class="system-info">
               <div class="info-item">
                 <span class="info-label">Total Services:</span>
-                <span class="info-value" id="total-services">9</span>
+                <span class="info-value" id="total-services-status">9</span>
               </div>
               <div class="info-item">
                 <span class="info-label">Healthy:</span>
-                <span class="info-value" id="healthy-count">0</span>
+                <span class="info-value" id="healthy-count-status">0</span>
               </div>
               <div class="info-item">
                 <span class="info-label">Last Check:</span>
-                <span class="info-value" id="last-check">Never</span>
+                <span class="info-value" id="last-check-status">Never</span>
               </div>
             </div>
-            <button id="refresh-status" class="refresh-btn">🔄 Refresh Status</button>
+            <button id="refresh-status-system" class="refresh-btn">🔄 Refresh Status</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Vectras Settings Panel (for hamburger menu) -->
+      <div id="vectras-settings-panel" class="settings-panel vectras-settings-panel" aria-hidden="true">
+        <div class="settings-header">
+          <strong>Vectras Settings</strong>
+          <button id="vectras-settings-close" aria-label="close">✕</button>
+        </div>
+        <div class="settings-body">
+          <!-- Global Settings Section -->
+          <div class="config-section">
+            <h3>🌐 Global Settings</h3>
+            <div class="config-group" id="global-settings">
+              <div class="loading-indicator">Loading global settings...</div>
+            </div>
+          </div>
+
+          <!-- Default Queries Section -->
+          <div class="config-section">
+            <h3>🔍 Default Queries</h3>
+            <div class="config-group" id="default-queries-config">
+              <div class="loading-indicator">Loading default queries...</div>
+            </div>
+          </div>
+
+          <!-- Agents Section -->
+          <div class="config-section">
+            <h3>🤖 Agents Configuration</h3>
+            <div class="agents-config-container">
+              <div class="agents-dropdown-container">
+                <label for="agent-selector">Select Agent:</label>
+                <select id="agent-selector" class="agent-selector">
+                  <option value="">Choose an agent...</option>
+                </select>
+              </div>
+              <div class="config-group" id="agent-config">
+                <div class="no-agent-selected">Select an agent from the dropdown above to view its configuration</div>
+              </div>
+            </div>
+          </div>
+
+          <!-- System Status Section (collapsed by default) -->
+          <div class="config-section">
+            <div class="section-header" id="system-status-header">
+              <h3>🖥️ System Status</h3>
+              <button class="toggle-section" id="toggle-system-status" aria-expanded="false">⌄</button>
+            </div>
+            <div class="config-group collapsed" id="system-status-content">
+              <div class="status-section">
+                <h4>🖥️ Core Services</h4>
+                <div class="service-group" id="core-services">
+                  <div class="service-item">
+                    <span class="service-name">🖥️ UI</span>
+                    <span class="service-url">localhost:8120</span>
+                    <span class="service-status" data-service="ui">⏳ Checking...</span>
+                  </div>
+                  <div class="service-item">
+                    <span class="service-name">🔌 API</span>
+                    <span class="service-url">localhost:8121</span>
+                    <span class="service-status" data-service="api">⏳ Checking...</span>
+                  </div>
+                  <div class="service-item">
+                    <span class="service-name">🔗 MCP</span>
+                    <span class="service-url">localhost:8122</span>
+                    <span class="service-status" data-service="mcp">⏳ Checking...</span>
+                  </div>
+                </div>
+              </div>
+
+              <div class="status-section">
+                <h4>🤖 Agents</h4>
+                <div class="service-group" id="agents">
+                  <div class="service-item">
+                    <span class="service-name">👑 Supervisor</span>
+                    <span class="service-url">localhost:8123</span>
+                    <span class="service-status" data-service="supervisor">⏳ Checking...</span>
+                  </div>
+                  <div class="service-item">
+                    <span class="service-name">📊 Log Monitor</span>
+                    <span class="service-url">localhost:8124</span>
+                    <span class="service-status" data-service="log-monitor">⏳ Checking...</span>
+                  </div>
+                  <div class="service-item">
+                    <span class="service-name">🔧 Coding</span>
+                    <span class="service-url">localhost:8125</span>
+                    <span class="service-status" data-service="coding">⏳ Checking...</span>
+                  </div>
+                  <div class="service-item">
+                    <span class="service-name">✅ Linting</span>
+                    <span class="service-url">localhost:8127</span>
+                    <span class="service-status" data-service="linting">⏳ Checking...</span>
+                  </div>
+                  <div class="service-item">
+                    <span class="service-name">🧪 Testing</span>
+                    <span class="service-url">localhost:8126</span>
+                    <span class="service-status" data-service="testing">⏳ Checking...</span>
+                  </div>
+                  <div class="service-item">
+                    <span class="service-name">🐙 GitHub</span>
+                    <span class="service-url">localhost:8128</span>
+                    <span class="service-status" data-service="github">⏳ Checking...</span>
+                  </div>
+                </div>
+              </div>
+
+              <div class="status-section">
+                <h4>📊 System Info</h4>
+                <div class="system-info">
+                  <div class="info-item">
+                    <span class="info-label">Total Services:</span>
+                    <span class="info-value" id="total-services">9</span>
+                  </div>
+                  <div class="info-item">
+                    <span class="info-label">Healthy:</span>
+                    <span class="info-value" id="healthy-count">0</span>
+                  </div>
+                  <div class="info-item">
+                    <span class="info-label">Last Check:</span>
+                    <span class="info-value" id="last-check">Never</span>
+                  </div>
+                </div>
+                <button id="refresh-status" class="refresh-btn">🔄 Refresh Status</button>
+              </div>
+            </div>
           </div>
         </div>
       </div>

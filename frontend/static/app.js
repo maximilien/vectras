@@ -30,7 +30,297 @@ const state = {
   agentCardCollapsed: false, // Store agent card collapse state
   isTyping: false, // Track if agent is currently responding
   chatScrollPositions: {}, // Store scroll position for each chat
+  configData: null, // Store configuration data
 };
+
+// Load configuration from API
+async function loadConfiguration() {
+  try {
+    const response = await fetch("/api/config");
+    const data = await response.json();
+    state.configData = data;
+    renderConfiguration();
+  } catch (error) {
+    // eslint-disable-next-line no-console
+    console.error("Failed to load configuration:", error);
+    // Show error state in settings
+    renderConfigurationError();
+  }
+}
+
+// Render configuration data in settings panel
+function renderConfiguration() {
+  if (!state.configData) {
+    return;
+  }
+
+  // Render global settings
+  renderGlobalSettings();
+  
+  // Render default queries
+  renderDefaultQueries();
+  
+  // Render agents dropdown
+  renderAgentsDropdown();
+}
+
+// Render global settings section
+function renderGlobalSettings() {
+  const container = $("#global-settings");
+  if (!container) return;
+
+  if (!state.configData || !state.configData.settings) {
+    container.innerHTML = "<div class=\"no-config\">No global settings configured</div>";
+    return;
+  }
+
+  const settings = state.configData.settings;
+  if (Object.keys(settings).length === 0) {
+    container.innerHTML = "<div class=\"no-config\">No global settings configured</div>";
+    return;
+  }
+
+  const settingsHtml = Object.entries(settings).map(([key, value]) => {
+    const displayValue = formatConfigValue(value);
+    return `
+      <div class="config-item">
+        <span class="config-key">${formatConfigKey(key)}</span>
+        <span class="config-value">${displayValue}</span>
+      </div>
+    `;
+  }).join("");
+
+  container.innerHTML = settingsHtml;
+}
+
+// Render default queries section
+function renderDefaultQueries() {
+  const container = $("#default-queries-config");
+  if (!container) return;
+
+  if (!state.configData || !state.configData.default_queries) {
+    container.innerHTML = "<div class=\"no-config\">No default queries configured</div>";
+    return;
+  }
+
+  const queries = state.configData.default_queries;
+  if (queries.length === 0) {
+    container.innerHTML = "<div class=\"no-config\">No default queries configured</div>";
+    return;
+  }
+
+  const queriesHtml = queries.map(query => `
+    <div class="config-item">
+      <span class="config-key">Query</span>
+      <span class="config-value">"${query}"</span>
+    </div>
+  `).join("");
+
+  container.innerHTML = queriesHtml;
+}
+
+// Render agents dropdown
+function renderAgentsDropdown() {
+  const selector = $("#agent-selector");
+  if (!selector) return;
+
+  if (!state.configData || !state.configData.agents) {
+    selector.innerHTML = "<option value=\"\">No agents available</option>";
+    return;
+  }
+
+  // Clear existing options except the first one
+  selector.innerHTML = "<option value=\"\">Choose an agent...</option>";
+  
+  // Add agent options
+  state.configData.agents.forEach(agent => {
+    const option = document.createElement("option");
+    option.value = agent.id;
+    option.textContent = `${getAgentIcon(agent.id)} ${agent.name}`;
+    selector.appendChild(option);
+  });
+}
+
+// Handle agent selection
+function handleAgentSelection(agentId) {
+  const container = $("#agent-config");
+  if (!container) return;
+
+  if (!agentId) {
+    container.innerHTML = "<div class=\"no-agent-selected\">Select an agent from the dropdown above to view its configuration</div>";
+    return;
+  }
+
+  const agent = state.configData.agents.find(a => a.id === agentId);
+  if (!agent) {
+    container.innerHTML = "<div class=\"no-agent-selected\">Agent not found</div>";
+    return;
+  }
+
+  const agentHtml = renderAgentConfiguration(agent);
+  container.innerHTML = agentHtml;
+}
+
+// Render individual agent configuration
+function renderAgentConfiguration(agent) {
+  const sections = [];
+
+  // Basic info section
+  const basicInfo = [
+    { key: "Name", value: agent.name },
+    { key: "Description", value: agent.description },
+    { key: "Enabled", value: agent.enabled ? "Yes" : "No" },
+    { key: "Model", value: agent.model },
+    { key: "Temperature", value: agent.temperature },
+    { key: "Max Tokens", value: agent.max_tokens },
+    { key: "Port", value: agent.port },
+  ];
+
+  const basicInfoHtml = basicInfo.map(item => `
+    <div class="config-item">
+      <span class="config-key">${item.key}</span>
+      <span class="config-value">${item.value}</span>
+    </div>
+  `).join("");
+
+  sections.push(`
+    <div class="config-section">
+      <h4>Basic Information</h4>
+      <div class="agent-basic-info">
+        ${basicInfoHtml}
+      </div>
+    </div>
+  `);
+
+  // Capabilities section
+  if (agent.capabilities && agent.capabilities.length > 0) {
+    const capabilitiesHtml = agent.capabilities.map(cap => 
+      `<span class="capability-tag">${cap}</span>`
+    ).join("");
+    
+    sections.push(`
+      <div class="config-section">
+        <h4>Capabilities</h4>
+        <div class="agent-capabilities-list">
+          ${capabilitiesHtml}
+        </div>
+      </div>
+    `);
+  }
+
+  // Tags section
+  if (agent.tags && agent.tags.length > 0) {
+    const tagsHtml = agent.tags.map(tag => 
+      `<span class="tag-item">${tag}</span>`
+    ).join("");
+    
+    sections.push(`
+      <div class="config-section">
+        <h4>Tags</h4>
+        <div class="agent-tags-list">
+          ${tagsHtml}
+        </div>
+      </div>
+    `);
+  }
+
+  // Memory configuration
+  if (agent.memory) {
+    const memoryHtml = Object.entries(agent.memory).map(([key, value]) => `
+      <div class="config-item">
+        <span class="config-key">${formatConfigKey(key)}</span>
+        <span class="config-value">${formatConfigValue(value)}</span>
+      </div>
+    `).join("");
+
+    sections.push(`
+      <div class="config-section">
+        <h4>Memory Configuration</h4>
+        <div class="nested-config">
+          ${memoryHtml}
+        </div>
+      </div>
+    `);
+  }
+
+  // Settings configuration
+  if (agent.settings) {
+    const settingsHtml = Object.entries(agent.settings).map(([key, value]) => `
+      <div class="config-item">
+        <span class="config-key">${formatConfigKey(key)}</span>
+        <span class="config-value">${formatConfigValue(value)}</span>
+      </div>
+    `).join("");
+
+    sections.push(`
+      <div class="config-section">
+        <h4>Agent Settings</h4>
+        <div class="nested-config">
+          ${settingsHtml}
+        </div>
+      </div>
+    `);
+  }
+
+  return `
+    <div class="agent-config-details">
+      ${sections.join("")}
+    </div>
+  `;
+}
+
+// Format configuration key for display
+function formatConfigKey(key) {
+  return key.split("_").map(word => 
+    word.charAt(0).toUpperCase() + word.slice(1)
+  ).join(" ");
+}
+
+// Format configuration value for display
+function formatConfigValue(value) {
+  if (value === null || value === undefined) {
+    return "null";
+  }
+  
+  if (typeof value === "boolean") {
+    return value ? "Yes" : "No";
+  }
+  
+  if (typeof value === "number") {
+    return value.toString();
+  }
+  
+  if (typeof value === "string") {
+    return `"${value}"`;
+  }
+  
+  if (Array.isArray(value)) {
+    if (value.length === 0) {
+      return "[]";
+    }
+    if (typeof value[0] === "string") {
+      return `[${value.map(v => `"${v}"`).join(", ")}]`;
+    }
+    return `[${value.join(", ")}]`;
+  }
+  
+  if (typeof value === "object") {
+    return JSON.stringify(value, null, 2);
+  }
+  
+  return String(value);
+}
+
+// Render configuration error state
+function renderConfigurationError() {
+  const containers = ["#global-settings", "#default-queries-config", "#agent-config"];
+  containers.forEach(selector => {
+    const container = $(selector);
+    if (container) {
+      container.innerHTML = "<div class=\"loading-indicator\">Failed to load configuration. Please try again.</div>";
+    }
+  });
+}
 
 // Load agents from the API
 async function loadAgents() {
@@ -833,6 +1123,8 @@ function bindEvents() {
       renderChats();
       renderMessages();
       saveState();
+      // Remove focus from the button before hiding the menu
+      menuNew.blur();
       burgerMenu.setAttribute("aria-hidden", "true");
       // Ensure scroll to bottom for new chat
       setTimeout(() => {
@@ -865,74 +1157,150 @@ function bindEvents() {
         renderMessages();
         saveState();
       }
+      // Remove focus from the button before hiding the menu
+      menuClear.blur();
       burgerMenu.setAttribute("aria-hidden", "true");
     });
   }
 
-  // Settings panel
+  // System Status Panel (gear wheel button)
   const settingsBtn = $("#settings");
-  const settingsPanel = $("#settings-panel");
-  const settingsClose = $("#settings-close");
+  const systemStatusPanel = $("#system-status-panel");
+  const systemStatusClose = $("#system-status-close");
   
-  function closeSettingsPanel() {
-    if (settingsPanel) {
-      settingsPanel.setAttribute("aria-hidden", "true");
+  function closeSystemStatusPanel() {
+    if (systemStatusPanel) {
+      systemStatusPanel.setAttribute("aria-hidden", "true");
     }
   }
   
-  if (settingsBtn && settingsPanel) {
+  if (settingsBtn && systemStatusPanel) {
     settingsBtn.addEventListener("click", (e) => {
       e.stopPropagation(); // Prevent event bubbling
-      const isHidden = settingsPanel.getAttribute("aria-hidden") !== "false";
-      settingsPanel.setAttribute("aria-hidden", isHidden ? "false" : "true");
+      const isHidden = systemStatusPanel.getAttribute("aria-hidden") !== "false";
+      systemStatusPanel.setAttribute("aria-hidden", isHidden ? "false" : "true");
 
-      // Check service health when opening settings
+      // Check service health when opening system status
       if (isHidden) {
         checkAllServices();
       }
     });
   }
   
-  if (settingsClose) {
-    settingsClose.addEventListener("click", (e) => {
+  if (systemStatusClose) {
+    systemStatusClose.addEventListener("click", (e) => {
       e.stopPropagation(); // Prevent event bubbling
-      closeSettingsPanel();
+      closeSystemStatusPanel();
     });
   }
   
-  // Click outside to dismiss settings panel
+  // Click outside to dismiss system status panel
   document.addEventListener("click", (e) => {
-    if (settingsPanel && settingsPanel.getAttribute("aria-hidden") !== "true") {
-      // Check if click is outside the settings panel
-      if (!settingsPanel.contains(e.target) && !settingsBtn.contains(e.target)) {
-        closeSettingsPanel();
+    if (systemStatusPanel && systemStatusPanel.getAttribute("aria-hidden") !== "true") {
+      // Check if click is outside the system status panel
+      if (!systemStatusPanel.contains(e.target) && !settingsBtn.contains(e.target)) {
+        closeSystemStatusPanel();
       }
     }
   });
   
-  // Prevent clicks inside settings panel from closing it
-  if (settingsPanel) {
-    settingsPanel.addEventListener("click", (e) => {
+  // Prevent clicks inside system status panel from closing it
+  if (systemStatusPanel) {
+    systemStatusPanel.addEventListener("click", (e) => {
       e.stopPropagation();
     });
   }
   
-  // Close settings panel with Escape key
+  // Close system status panel with Escape key
   document.addEventListener("keydown", (e) => {
-    if (e.key === "Escape" && settingsPanel && settingsPanel.getAttribute("aria-hidden") !== "true") {
-      closeSettingsPanel();
+    if (e.key === "Escape" && systemStatusPanel && systemStatusPanel.getAttribute("aria-hidden") !== "true") {
+      closeSystemStatusPanel();
+    }
+  });
+
+  // Vectras Settings Panel (hamburger menu)
+  const vectrasSettingsPanel = $("#vectras-settings-panel");
+  const vectrasSettingsClose = $("#vectras-settings-close");
+  
+  function closeVectrasSettingsPanel() {
+    if (vectrasSettingsPanel) {
+      vectrasSettingsPanel.setAttribute("aria-hidden", "true");
+      // Reset inline styles
+      vectrasSettingsPanel.style.transform = "";
+      vectrasSettingsPanel.style.display = "";
+      vectrasSettingsPanel.style.visibility = "";
+      vectrasSettingsPanel.style.opacity = "";
+    }
+  }
+  
+  if (vectrasSettingsClose) {
+    vectrasSettingsClose.addEventListener("click", (e) => {
+      e.stopPropagation(); // Prevent event bubbling
+      closeVectrasSettingsPanel();
+    });
+  }
+  
+  // Click outside to dismiss vectras settings panel
+  document.addEventListener("click", (e) => {
+    if (vectrasSettingsPanel && vectrasSettingsPanel.getAttribute("aria-hidden") !== "true") {
+      // Check if click is outside the vectras settings panel and not on the menu settings button
+      if (!vectrasSettingsPanel.contains(e.target) && e.target !== menuSettings) {
+        closeVectrasSettingsPanel();
+      }
+    }
+  });
+  
+  // Prevent clicks inside vectras settings panel from closing it
+  if (vectrasSettingsPanel) {
+    vectrasSettingsPanel.addEventListener("click", (e) => {
+      e.stopPropagation();
+    });
+  }
+  
+  // Close vectras settings panel with Escape key
+  document.addEventListener("keydown", (e) => {
+    if (e.key === "Escape" && vectrasSettingsPanel && vectrasSettingsPanel.getAttribute("aria-hidden") !== "true") {
+      closeVectrasSettingsPanel();
     }
   });
 
   // Menu settings button
   if (menuSettings) {
     menuSettings.addEventListener("click", () => {
-      const settingsPanel = $("#settings-panel");
-      if (settingsPanel) {
-        settingsPanel.setAttribute("aria-hidden", "false");
+      if (vectrasSettingsPanel) {
+        vectrasSettingsPanel.setAttribute("aria-hidden", "false");
+        // Force the panel to be visible
+        vectrasSettingsPanel.style.transform = "translateX(0)";
+        vectrasSettingsPanel.style.display = "flex";
+        vectrasSettingsPanel.style.visibility = "visible";
+        vectrasSettingsPanel.style.opacity = "1";
+        
+        loadConfiguration(); // Load configuration when opening via menu
         checkAllServices(); // Check health when opening via menu
       }
+      // Remove focus from the button before hiding the menu
+      menuSettings.blur();
       burgerMenu.setAttribute("aria-hidden", "true");
+    });
+  }
+
+  // Agent selector in settings
+  const agentSelector = $("#agent-selector");
+  if (agentSelector) {
+    agentSelector.addEventListener("change", (e) => {
+      handleAgentSelection(e.target.value);
+    });
+  }
+
+  // System status toggle in settings
+  const systemStatusToggle = $("#toggle-system-status");
+  const systemStatusContent = $("#system-status-content");
+  if (systemStatusToggle && systemStatusContent) {
+    systemStatusToggle.addEventListener("click", () => {
+      const isExpanded = systemStatusToggle.getAttribute("aria-expanded") === "true";
+      systemStatusToggle.setAttribute("aria-expanded", !isExpanded);
+      systemStatusToggle.textContent = isExpanded ? "⌄" : "⌃";
+      systemStatusContent.classList.toggle("collapsed", isExpanded);
     });
   }
 
@@ -1198,13 +1566,16 @@ async function checkAllServices() {
 }
 
 function updateServiceStatus(serviceName, status, emoji) {
-  const statusElement = document.querySelector(
+  // Update status in both panels
+  const statusElements = document.querySelectorAll(
     `[data-service="${serviceName}"]`,
   );
-  if (statusElement) {
-    statusElement.textContent = `${emoji} ${status.charAt(0).toUpperCase() + status.slice(1)}`;
-    statusElement.className = `service-status ${status}`;
-  }
+  statusElements.forEach(statusElement => {
+    if (statusElement) {
+      statusElement.textContent = `${emoji} ${status.charAt(0).toUpperCase() + status.slice(1)}`;
+      statusElement.className = `service-status ${status}`;
+    }
+  });
 }
 
 function updateSystemInfo(results) {
@@ -1212,16 +1583,33 @@ function updateSystemInfo(results) {
   const healthyCount = results.filter((r) => r.status === "healthy").length;
   const lastCheck = new Date().toLocaleTimeString();
 
-  const totalElement = document.getElementById("total-services");
-  const healthyElement = document.getElementById("healthy-count");
-  const lastCheckElement = document.getElementById("last-check");
+  // Update system info in both panels
+  const totalElements = [
+    document.getElementById("total-services"),
+    document.getElementById("total-services-status")
+  ];
+  const healthyElements = [
+    document.getElementById("healthy-count"),
+    document.getElementById("healthy-count-status")
+  ];
+  const lastCheckElements = [
+    document.getElementById("last-check"),
+    document.getElementById("last-check-status")
+  ];
 
-  if (totalElement) totalElement.textContent = totalServices;
-  if (healthyElement) healthyElement.textContent = healthyCount;
-  if (lastCheckElement) lastCheckElement.textContent = lastCheck;
+  totalElements.forEach(element => {
+    if (element) element.textContent = totalServices;
+  });
+  healthyElements.forEach(element => {
+    if (element) element.textContent = healthyCount;
+  });
+  lastCheckElements.forEach(element => {
+    if (element) element.textContent = lastCheck;
+  });
 }
 
 function bindStatusEvents() {
+  // Bind refresh button for Vectras Settings panel
   const refreshBtn = document.getElementById("refresh-status");
   if (refreshBtn) {
     refreshBtn.addEventListener("click", async () => {
@@ -1232,6 +1620,20 @@ function bindStatusEvents() {
 
       refreshBtn.disabled = false;
       refreshBtn.textContent = "🔄 Refresh Status";
+    });
+  }
+
+  // Bind refresh button for System Status panel
+  const refreshBtnSystem = document.getElementById("refresh-status-system");
+  if (refreshBtnSystem) {
+    refreshBtnSystem.addEventListener("click", async () => {
+      refreshBtnSystem.disabled = true;
+      refreshBtnSystem.textContent = "⏳ Checking...";
+
+      await checkAllServices();
+
+      refreshBtnSystem.disabled = false;
+      refreshBtnSystem.textContent = "🔄 Refresh Status";
     });
   }
 }

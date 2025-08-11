@@ -3,6 +3,7 @@
 
 import os
 from pathlib import Path
+from typing import Any, Dict, List, Optional
 
 import yaml
 from fastapi import FastAPI
@@ -17,6 +18,8 @@ class HealthResponse(BaseModel):
 
 class ConfigResponse(BaseModel):
     default_queries: list[str]
+    settings: Optional[Dict[str, Any]] = None
+    agents: Optional[List[Dict[str, Any]]] = None
 
 
 def load_config():
@@ -25,7 +28,11 @@ def load_config():
     if config_path.exists():
         with open(config_path, "r") as f:
             return yaml.safe_load(f)
-    return {"default_queries": ["status", "latest actions", "up time"]}
+    return {
+        "default_queries": ["status", "latest actions", "up time"],
+        "settings": {},
+        "agents": [],
+    }
 
 
 def create_app() -> FastAPI:
@@ -50,7 +57,9 @@ def create_app() -> FastAPI:
         return ConfigResponse(
             default_queries=config_data.get(
                 "default_queries", ["status", "latest actions", "up time"]
-            )
+            ),
+            settings=config_data.get("settings", {}),
+            agents=config_data.get("agents", []),
         )
 
     return app
