@@ -6,8 +6,17 @@
 from pathlib import Path
 from typing import List, Optional
 
+import os
+import re
 import yaml
 from pydantic import BaseModel, Field
+
+# Try to load dotenv if available
+try:
+    from dotenv import load_dotenv
+    load_dotenv()  # Load .env file
+except ImportError:
+    pass  # dotenv not available, continue without it
 
 
 class AgentSettings(BaseModel):
@@ -45,12 +54,12 @@ class AgentSettings(BaseModel):
 
     # GitHub agent specific settings
     github_token: Optional[str] = None
-    repo_owner: Optional[str] = None
-    repo_name: Optional[str] = None
-    default_branch: Optional[str] = None
-    branch_prefix: Optional[str] = None
-    pr_template: Optional[str] = None
-    auto_merge: Optional[bool] = None
+    github_org: Optional[str] = None
+    github_repo: Optional[str] = None
+    github_branch: Optional[str] = None
+    github_branch_prefix: Optional[str] = None
+    github_pr_template: Optional[str] = None
+    github_auto_merge: Optional[bool] = None
 
 
 class AgentConfig(BaseModel):
@@ -88,6 +97,28 @@ class VectrasConfig(BaseModel):
     settings: GlobalSettings = Field(default_factory=GlobalSettings)
 
 
+def _substitute_env_vars(obj):
+    """Recursively substitute environment variables in configuration values."""
+    if isinstance(obj, dict):
+        return {key: _substitute_env_vars(value) for key, value in obj.items()}
+    elif isinstance(obj, list):
+        return [_substitute_env_vars(item) for item in obj]
+    elif isinstance(obj, str):
+        # Replace ${VAR_NAME} with environment variable values
+        def replace_env_var(match):
+            var_name = match.group(1)
+            env_value = os.getenv(var_name)
+            if env_value is not None:
+                print(f"🔧 Substituting ${var_name} with: {env_value[:10] if len(env_value) > 10 else env_value}...")
+                return env_value
+            else:
+                print(f"⚠️ Environment variable {var_name} not found, keeping original: {match.group(0)}")
+                return match.group(0)  # Return original if not found
+        
+        return re.sub(r'\$\{([^}]+)\}', replace_env_var, obj)
+    else:
+        return obj
+
 def load_config(config_path: Optional[str] = None) -> VectrasConfig:
     """Load configuration from YAML file."""
     if config_path is None:
@@ -101,6 +132,9 @@ def load_config(config_path: Optional[str] = None) -> VectrasConfig:
 
     with open(config_path, "r") as f:
         config_data = yaml.safe_load(f)
+
+    # Substitute environment variables
+    config_data = _substitute_env_vars(config_data)
 
     return VectrasConfig(**config_data)
 

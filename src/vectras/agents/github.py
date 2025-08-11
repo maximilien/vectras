@@ -64,6 +64,15 @@ class GitHubIntegration:
                 print(
                     "Token lacks 'repo' scope. Please create a new token with 'repo' permissions."
                 )
+            elif "Not Found" in str(e):
+                print(f"Repository not found: {self.repo_owner}/{self.repo_name}")
+                print(f"Please ensure the repository exists and your token has access to it.")
+            elif "Bad credentials" in str(e):
+                print("Invalid GitHub token. Please check your GITHUB_TOKEN environment variable.")
+            elif "Resource not accessible by personal access token" in str(e):
+                print("Token lacks 'repo' scope. Please create a new token with 'repo' permissions.")
+            else:
+                print(f"Unexpected GitHub API error: {type(e).__name__}: {e}")
             return False
 
     def commit_files(self, branch_name: str, files: List[str], commit_message: str) -> bool:
@@ -156,18 +165,20 @@ class GitHubAgent(BaseAgent):
             self.config.settings, "github_token", None
         )
         repo_owner = os.getenv("GITHUB_ORG") or getattr(
-            self.config.settings, "repo_owner", "maximilien"
+            self.config.settings, "github_org", "maximilien"
         )
         repo_name = os.getenv("GITHUB_REPO") or getattr(
-            self.config.settings, "repo_name", "vectras"
+            self.config.settings, "github_repo", "vectras"
         )
 
         if github_token:
+            print(f"🔧 Initializing GitHub integration for {repo_owner}/{repo_name}")
             self.github_integration = GitHubIntegration(github_token, repo_owner, repo_name)
             self.log_activity(
                 "github_integration_initialized", {"repo": f"{repo_owner}/{repo_name}"}
             )
         else:
+            print("⚠️ No GitHub token found. GitHub integration disabled.")
             self.github_integration = None
             self.log_activity("github_init_error", {"error": "No GitHub token found"})
 
@@ -463,17 +474,19 @@ class GitHubAgent(BaseAgent):
             return "❌ GitHub integration not configured. Please set GITHUB_TOKEN environment variable."
 
         try:
-            # Create branch for the fix
-            branch_name = "fix-divide-tool-bug"
+            # Create branch for the fix with timestamp to avoid conflicts
+            from datetime import datetime
+            timestamp = datetime.now().strftime("%Y%m%d-%H%M%S")
+            branch_name = f"fix-divide-tool-bug-{timestamp}"
             base_branch = "main"
 
             # Create the branch
             branch_success = self.github_integration.create_branch(branch_name, base_branch)
             if not branch_success:
-                return f"❌ Failed to create branch '{branch_name}'"
+                return f"❌ Failed to create branch '{branch_name}'. Repository '{self.github_integration.repo_owner}/{self.github_integration.repo_name}' may not exist or token may lack permissions."
 
             # Prepare files to commit
-            files_to_commit = ["test_tools/divide_fixed_new.py", "test_tools/test_divide.py"]
+            files_to_commit = ["test_tools/divide_fixed.py", "test_tools/test_divide.py"]
 
             # Check if files exist
             import os
