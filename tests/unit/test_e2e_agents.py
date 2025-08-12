@@ -41,24 +41,24 @@ class TestTestingAgent:
     return result'''
 
         result = testing_manager.create_tool(
-            name="divide",
+            name="test_divide_buggy",
             language="python",
             code=buggy_code,
             description="A buggy divide function",
             has_bugs=True,
         )
 
-        assert "Successfully created tool 'divide'" in result
+        assert "Successfully created tool 'test_divide_buggy'" in result
 
         # Check that the tool was created and has the expected properties
         tool = None
         for t in testing_manager.test_tools.values():
-            if t.name == "divide":
+            if t.name == "test_divide_buggy":
                 tool = t
                 break
 
         assert tool is not None
-        assert tool.name == "divide"
+        assert tool.name == "test_divide_buggy"
         assert tool.language == "python"
         assert tool.has_bugs is True
         assert tool.severity == "medium"  # Medium severity for manually created tools with bugs
@@ -78,7 +78,7 @@ class TestTestingAgent:
     return result'''
 
         testing_manager.create_tool(
-            name="divide",
+            name="test_divide_buggy_exec",
             language="python",
             code=buggy_code,
             description="A buggy divide function",
@@ -86,10 +86,10 @@ class TestTestingAgent:
         )
 
         # Execute the tool
-        result = testing_manager.execute_tool("divide")
+        result = testing_manager.execute_tool("test_divide_buggy_exec")
 
         # Should contain error information or indicate execution
-        assert "divide" in result.lower()
+        assert "test_divide_buggy_exec" in result.lower()
         # The tool might execute successfully even with the bug if it's not called with arguments
 
     @pytest.mark.asyncio
@@ -108,7 +108,7 @@ class TestTestingAgent:
 
         # Create the tool using the manager
         testing_manager.create_tool(
-            name="divide",
+            name="test_divide_fixed",
             language="python",
             code=fixed_code,
             description="A fixed divide function",
@@ -116,10 +116,10 @@ class TestTestingAgent:
         )
 
         # Run the tests using the manager's method
-        result = testing_manager.run_tests("divide")
+        result = testing_manager.run_tests("test_divide_fixed")
 
         # Should indicate that tests were run
-        assert "divide" in result.lower()
+        assert "test_divide_fixed" in result.lower()
 
     @pytest.mark.asyncio
     async def test_list_tools(self, testing_manager):

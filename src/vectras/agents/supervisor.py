@@ -467,7 +467,42 @@ class QueryResponse(BaseModel):
 async def query_endpoint(request: QueryRequest) -> QueryResponse:
     """Main query endpoint that uses the OpenAI Agents SDK."""
     try:
-        print(f"DEBUG: Supervisor agent received query: {request.query[:100]}...")
+        # Check if we're in fake OpenAI mode
+        if os.getenv("VECTRAS_FAKE_OPENAI", "0") == "1":
+            # Provide a mock response for testing
+            fake_response = """## Backend Status Report
+
+### Project Overview
+The Vectras project is running successfully with all components operational.
+
+### Agent Status
+- **Supervisor Agent**: Active and coordinating project operations
+- **GitHub Agent**: Available for repository management
+- **Testing Agent**: Ready for test creation and execution
+- **Coding Agent**: Available for code analysis and fixes
+- **Linting Agent**: Ready for code quality checks
+- **Logging Monitor Agent**: Monitoring system logs
+
+### System Health
+All backend services are running properly:
+- API Service: Operational
+- MCP Service: Operational
+- Agent Services: All operational
+
+### Project Status
+The project is in a healthy state with all agents ready to handle user requests."""
+
+            return QueryResponse(
+                status="success",
+                response=fake_response,
+                timestamp=datetime.now(),
+                metadata={
+                    "model": "fake-openai",
+                    "capabilities": ["Project Management", "Agent Coordination", "File Operations"],
+                    "response_type": "markdown",
+                    "sdk_version": "fake-mode",
+                },
+            )
 
         # Run the agent using the SDK
         result = await Runner.run(supervisor_agent, request.query)
@@ -490,7 +525,6 @@ async def query_endpoint(request: QueryRequest) -> QueryResponse:
         )
 
     except Exception as e:
-        print(f"Error in Supervisor agent: {str(e)}")
         return QueryResponse(
             status="error",
             response=f"Error processing query: {str(e)}",
