@@ -162,29 +162,50 @@ def test_status_endpoint(test_client):
 @pytest.mark.asyncio
 async def test_query_endpoint(test_client):
     """Test query endpoint."""
-    # Mock the Runner.run method
-    with patch("vectras.agents.supervisor.Runner.run") as mock_run:
-        mock_result = MagicMock()
-        mock_result.final_output = "Test response from supervisor"
-        mock_run.return_value = mock_result
+    # Mock the environment variable to disable fake OpenAI mode
+    with patch.dict("os.environ", {"VECTRAS_FAKE_OPENAI": "0"}):
+        # Mock the Runner.run method
+        with patch("vectras.agents.supervisor.Runner.run") as mock_run:
+            mock_result = MagicMock()
+            mock_result.final_output = "Test response from supervisor"
+            mock_run.return_value = mock_result
 
-        response = test_client.post("/query", json={"query": "test query"})
-        assert response.status_code == 200
-        data = response.json()
-        assert data["status"] == "success"
-        assert "Test response from supervisor" in data["response"]
-        assert data["agent_id"] == "supervisor"
+            response = test_client.post("/query", json={"query": "test query"})
+            assert response.status_code == 200
+            data = response.json()
+            assert data["status"] == "success"
+            assert "Test response from supervisor" in data["response"]
+            assert data["agent_id"] == "supervisor"
 
 
 @pytest.mark.asyncio
 async def test_query_endpoint_error(test_client):
     """Test query endpoint with error."""
-    # Mock the Runner.run method to raise an exception
-    with patch("vectras.agents.supervisor.Runner.run") as mock_run:
-        mock_run.side_effect = Exception("Test error")
+    # Mock the environment variable to disable fake OpenAI mode
+    with patch.dict("os.environ", {"VECTRAS_FAKE_OPENAI": "0"}):
+        # Mock the Runner.run method to raise an exception
+        with patch("vectras.agents.supervisor.Runner.run") as mock_run:
+            mock_run.side_effect = Exception("Test error")
 
-        response = test_client.post("/query", json={"query": "test query"})
+            response = test_client.post("/query", json={"query": "test query"})
+            assert response.status_code == 200
+            data = response.json()
+            assert data["status"] == "error"
+            assert "Error processing query" in data["response"]
+
+
+@pytest.mark.asyncio
+async def test_query_endpoint_fake_openai(test_client):
+    """Test query endpoint with fake OpenAI mode enabled."""
+    # Ensure fake OpenAI mode is enabled
+    with patch.dict("os.environ", {"VECTRAS_FAKE_OPENAI": "1"}):
+        response = test_client.post("/query", json={"query": "tell me the status on the backend"})
         assert response.status_code == 200
         data = response.json()
-        assert data["status"] == "error"
-        assert "Error processing query" in data["response"]
+        assert data["status"] == "success"
+        assert "Backend Status Report" in data["response"]
+        assert "Project Overview" in data["response"]
+        assert "Agent Status" in data["response"]
+        assert data["agent_id"] == "supervisor"
+        assert data["metadata"]["model"] == "fake-openai"
+        assert data["metadata"]["sdk_version"] == "fake-mode"
