@@ -200,7 +200,7 @@ class TestGitHubAgent:
 
         result = await agent._handle_status_request()
 
-        assert "GitHub Agent Status:" in result
+        assert "## GitHub Agent Status" in result
         assert "test_owner/test_repo" in result
         assert "5" in result  # success_count
         assert "1" in result  # error_count
@@ -334,7 +334,7 @@ class TestGitHubAgent:
     async def test_process_query_status(self, agent):
         """Test processing status query."""
         result = await agent.process_query("status")
-        assert "GitHub Agent Status:" in result
+        assert "## GitHub Agent Status" in result
 
     @pytest.mark.asyncio
     async def test_process_query_create_branch(self, agent):

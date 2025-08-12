@@ -343,13 +343,34 @@ class GitHubAgent(BaseAgent):
 
     async def _handle_status_request(self) -> str:
         """Handle status requests."""
+        # Get actual PR count from GitHub API if available
+        total_prs = len(self.pull_requests)  # Default to in-memory count
+        latest_pr_info = None
+        
+        if self.github_integration:
+            try:
+                # Fetch PRs from GitHub API to get accurate count
+                import httpx
+                async with httpx.AsyncClient() as client:
+                    prs_url = f"{self.github_integration.base_url}/pulls?state=all&per_page=100"
+                    response = await client.get(prs_url, headers=self.github_integration.headers)
+                    if response.status_code == 200:
+                        prs = response.json()
+                        total_prs = len(prs)
+                        if prs:
+                            latest_pr = prs[0]  # Most recent PR
+                            latest_pr_info = f"#{latest_pr['number']} - {latest_pr['title']}"
+            except Exception as e:
+                # Fall back to in-memory count if API call fails
+                pass
+
         status_info = {
             "agent": "GitHub Agent",
             "status": "active",
             "github_configured": self.github_integration is not None,
             "success_count": self.success_count,
             "error_count": self.error_count,
-            "pull_requests_created": len(self.pull_requests),
+            "pull_requests_created": total_prs,
             "last_activity": self.last_activity.isoformat() if self.last_activity else None,
         }
 
@@ -358,11 +379,13 @@ class GitHubAgent(BaseAgent):
                 f"{self.github_integration.repo_owner}/{self.github_integration.repo_name}"
             )
 
-        if self.pull_requests:
+        if latest_pr_info:
+            status_info["latest_pr"] = latest_pr_info
+        elif self.pull_requests:
             latest_pr = self.pull_requests[-1]
             status_info["latest_pr"] = f"#{latest_pr['number']} - {latest_pr['title']}"
 
-        return f"GitHub Agent Status:\n{self._format_dict(status_info)}"
+        return f"## GitHub Agent Status\n\n{self._format_dict(status_info)}"
 
     async def _handle_create_branch_request(self, query: str) -> str:
         """Handle branch creation requests."""
@@ -622,7 +645,18 @@ Available commands: create branch, commit files, create pr, list branches, statu
 
     def _format_dict(self, data: Dict[str, Any]) -> str:
         """Format dictionary for display."""
-        return "\n".join([f"- **{k}**: {v}" for k, v in data.items()])
+        # Use proper markdown formatting for better rendering
+        formatted_items = []
+        for k, v in data.items():
+            if v is None:
+                formatted_items.append(f"- **{k}**: `None`")
+            elif isinstance(v, bool):
+                formatted_items.append(f"- **{k}**: `{v}`")
+            elif isinstance(v, (int, float)):
+                formatted_items.append(f"- **{k}**: `{v}`")
+            else:
+                formatted_items.append(f"- **{k}**: {v}")
+        return "\n".join(formatted_items)
 
 
 def create_app() -> FastAPI:
@@ -648,7 +682,28 @@ def create_app() -> FastAPI:
     async def query(request: Dict[str, Any]):
         query_text = request.get("query", "")
         response = await agent.process_query(query_text)
-        return {"response": response}
+        
+        # Determine response type based on content
+        response_type = "text"  # default
+        if query_text.lower().strip() == "status":
+            response_type = "markdown"
+        elif "help" in query_text.lower():
+            response_type = "markdown"
+        elif "latest pr" in query_text.lower() or "recent pr" in query_text.lower():
+            response_type = "markdown"
+        elif "latest activities" in query_text.lower() or "recent activities" in query_text.lower():
+            response_type = "markdown"
+        elif "list branches" in query_text.lower():
+            response_type = "markdown"
+        elif "create" in query_text.lower() and ("branch" in query_text.lower() or "pr" in query_text.lower()):
+            response_type = "markdown"
+        elif "commit" in query_text.lower():
+            response_type = "markdown"
+        
+        return {
+            "response": response,
+            "response_type": response_type
+        }
 
     @app.get("/health")
     async def health():

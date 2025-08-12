@@ -330,24 +330,25 @@ async function loadAgents() {
 
     if (data.agents && data.agents.length > 0) {
       state.agents = data.agents;
-      // Set first agent as active if none selected
+      // Set GitHub agent as active if none selected, fallback to first agent
       if (!state.activeAgentId) {
-        state.activeAgentId = state.agents[0].id;
+        const githubAgent = state.agents.find(agent => agent.id === "github");
+        state.activeAgentId = githubAgent ? githubAgent.id : state.agents[0].id;
       }
     } else {
       // Fallback to a default agent if none loaded
       state.agents = [
         {
-          id: "supervisor",
-          name: "Supervisor Agent",
-          description: "Main coordinator agent",
-          capabilities: ["Chat", "System Status"],
-          tags: ["supervisor"],
+          id: "github",
+          name: "GitHub Agent",
+          description: "GitHub operations agent",
+          capabilities: ["Branch Management", "PR Creation", "Repository Operations"],
+          tags: ["github"],
           endpoint: "/query",
-          port: 8123,
+          port: 8128,
         },
       ];
-      state.activeAgentId = "supervisor";
+      state.activeAgentId = "github";
     }
 
     renderAgents();
@@ -356,16 +357,16 @@ async function loadAgents() {
     // Use fallback agent
     state.agents = [
       {
-        id: "supervisor",
-        name: "Supervisor Agent",
-        description: "Main coordinator agent",
-        capabilities: ["Chat", "System Status"],
-        tags: ["supervisor"],
+        id: "github",
+        name: "GitHub Agent",
+        description: "GitHub operations agent",
+        capabilities: ["Branch Management", "PR Creation", "Repository Operations"],
+        tags: ["github"],
         endpoint: "/query",
-        port: 8123,
+        port: 8128,
       },
     ];
-    state.activeAgentId = "supervisor";
+    state.activeAgentId = "github";
     renderAgents();
     renderAgentCard();
   }
@@ -547,8 +548,41 @@ function getActiveChat() {
   return agentChats.find((c) => c.id === state.activeChatId) || agentChats[0];
 }
 
-function processMessageContent(content) {
-  // Detect and format different types of code content
+function processMessageContent(content, responseType = null) {
+  // If responseType is provided, use it directly instead of auto-detection
+  if (responseType) {
+    switch (responseType.toLowerCase()) {
+      case "markdown":
+        return renderMarkdown(content);
+      case "json":
+        try {
+          const parsed = JSON.parse(content);
+          const formatted = JSON.stringify(parsed, null, 2);
+          return `<div class="code-block">
+            <div class="code-block-header">JSON</div>
+            <pre class="language-json"><code class="language-json">${escapeHtml(formatted)}</code></pre>
+          </div>`;
+        } catch (e) {
+          // Fall back to text if JSON parsing fails
+          return escapeHtml(content);
+        }
+      case "python":
+        return `<div class="code-block">
+          <div class="code-block-header">PYTHON</div>
+          <pre class="language-python"><code class="language-python">${escapeHtml(content)}</code></pre>
+        </div>`;
+      case "yaml":
+        return `<div class="code-block">
+          <div class="code-block-header">YAML</div>
+          <pre class="language-yaml"><code class="language-yaml">${escapeHtml(content)}</code></pre>
+        </div>`;
+      case "text":
+      default:
+        return escapeHtml(content);
+    }
+  }
+
+  // Fallback to auto-detection if no responseType is provided
   const codeBlockRegex = /```(\w+)?\n?([\s\S]*?)```/g;
   let processedContent = escapeHtml(content);
 
@@ -684,7 +718,26 @@ function isLikelyPython(content) {
     "print(",
     "return ",
   ];
-  return pythonKeywords.some((keyword) => content.includes(keyword));
+  
+  // More specific Python detection - look for actual Python code patterns
+  const pythonPatterns = [
+    /^def\s+\w+\s*\(/, // Function definition
+    /^class\s+\w+/, // Class definition
+    /^import\s+/, // Import statement
+    /^from\s+\w+\s+import/, // From import statement
+    /if\s+__name__\s*==\s*["']__main__["']/, // Main guard
+    /print\s*\(/, // Print function
+    /return\s+/, // Return statement
+    /^\s*#.*$/m, // Python comments
+    /^\s*[a-zA-Z_]\w*\s*=\s*/, // Variable assignment
+  ];
+  
+  // Check if content has multiple Python patterns or starts with Python code
+  const patternMatches = pythonPatterns.filter((pattern) => pattern.test(content)).length;
+  const keywordMatches = pythonKeywords.filter((keyword) => content.includes(keyword)).length;
+  
+  // Require more specific patterns for Python detection
+  return patternMatches >= 2 || (keywordMatches >= 3 && content.trim().startsWith("def "));
 }
 
 function isLikelyMarkdown(content) {
@@ -703,6 +756,12 @@ function isLikelyMarkdown(content) {
   const matchCount = markdownPatterns.filter((pattern) =>
     pattern.test(content),
   ).length;
+  
+  // Special case for GitHub agent status format
+  if (content.includes("GitHub Agent Status:") && content.includes("- ") && content.includes(":")) {
+    return true;
+  }
+  
   return (
     matchCount >= 2 ||
     content.includes("###") ||
@@ -803,7 +862,7 @@ function renderMessages(forceScrollToBottom = false) {
       div.className = `msg ${m.role}`;
 
       // Process the content for syntax highlighting
-      const processedContent = processMessageContent(m.content);
+      const processedContent = processMessageContent(m.content, m.responseType);
       
       // Add repeat button for user messages only
       if (m.role === "user") {
@@ -843,9 +902,11 @@ function renderMessages(forceScrollToBottom = false) {
 
   // Show typing indicator if agent is responding
   if (state.isTyping) {
-    const activeAgent = state.agents.find((a) => a.id === state.activeAgentId);
-    const agentName = activeAgent ? activeAgent.name : "Agent";
-    const agentIcon = getAgentIcon(state.activeAgentId);
+    const chat = getActiveChat();
+    const targetAgentId = chat.agentId || state.activeAgentId;
+    const targetAgent = state.agents.find((a) => a.id === targetAgentId);
+    const agentName = targetAgent ? targetAgent.name : "Agent";
+    const agentIcon = getAgentIcon(targetAgentId);
     
     const typingDiv = document.createElement("div");
     typingDiv.className = "msg assistant typing-indicator";
@@ -869,6 +930,20 @@ function renderMessages(forceScrollToBottom = false) {
 async function sendMessage(text) {
   ensureActiveChat();
   const chat = getActiveChat();
+  
+  // Determine which agent this conversation belongs to
+  let targetAgentId = state.activeAgentId; // Default to currently selected agent
+  
+  // If this is a new conversation or we can determine the agent from context
+  if (chat.messages.length === 0) {
+    // New conversation - use the currently selected agent
+    targetAgentId = state.activeAgentId;
+    chat.agentId = targetAgentId; // Store which agent this chat belongs to
+  } else {
+    // Existing conversation - use the agent this chat belongs to
+    targetAgentId = chat.agentId || state.activeAgentId;
+  }
+  
   chat.messages.push({ 
     role: "user", 
     content: text,
@@ -882,9 +957,9 @@ async function sendMessage(text) {
   renderMessages(true); // Force scroll to bottom
 
   try {
-    // Get the selected agent's port
-    const activeAgent = state.agents.find((a) => a.id === state.activeAgentId);
-    const agentPort = activeAgent ? activeAgent.port : 8123;
+    // Get the target agent's port
+    const targetAgent = state.agents.find((a) => a.id === targetAgentId);
+    const agentPort = targetAgent ? targetAgent.port : 8123;
 
     const protocol = window.location.protocol;
     const host = window.location.hostname;
@@ -899,20 +974,28 @@ async function sendMessage(text) {
 
     // Handle different response formats from different agents
     let reply;
+    let responseType = "text"; // default
+    
     if (typeof data.response === "string") {
       reply = data.response;
+      // Use response_type from metadata if available, otherwise from direct field, otherwise auto-detect
+      responseType = data.metadata?.response_type || data.response_type || "text";
     } else if (data.response?.summary) {
       reply = data.response.summary;
+      responseType = "text";
     } else if (data.response) {
       reply = JSON.stringify(data.response, null, 2);
+      responseType = "json";
     } else {
       reply = "No response received";
+      responseType = "text";
     }
 
     chat.messages.push({
       role: "assistant",
       content: reply,
-      agent: activeAgent ? activeAgent.name : "Unknown Agent",
+      responseType: responseType, // Store the response type
+      agent: targetAgent ? targetAgent.name : "Unknown Agent",
       timestamp: new Date().toISOString()
     });
   } catch (e) {

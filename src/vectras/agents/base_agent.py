@@ -310,6 +310,49 @@ The bug was fixed by changing the division from `n1 / 0` to `n1 / n2` and adding
             self.log_activity("handoff_error", {"target_agent": target_agent_id, "error": str(e)})
             raise
 
+    def _determine_response_type(self, query: str, response: Any) -> str:
+        """Determine the response type based on the query and response content."""
+        query_lower = query.lower()
+        
+        # Default response type
+        response_type = "text"
+        
+        # Agent-specific response type detection
+        if self.agent_id == "github":
+            if any(keyword in query_lower for keyword in ["status", "help", "latest pr", "recent pr", "list branches", "create"]):
+                response_type = "markdown"
+        elif self.agent_id == "testing":
+            if any(keyword in query_lower for keyword in ["list tools", "execute", "run test", "create tool", "status"]):
+                response_type = "markdown"
+        elif self.agent_id == "linting":
+            if any(keyword in query_lower for keyword in ["lint", "quality", "format", "status"]):
+                response_type = "markdown"
+        elif self.agent_id == "coding":
+            if any(keyword in query_lower for keyword in ["analyze", "fix", "bug", "error", "status"]):
+                response_type = "markdown"
+        elif self.agent_id == "log-monitor":
+            if any(keyword in query_lower for keyword in ["monitor", "check logs", "error", "status"]):
+                response_type = "markdown"
+        elif self.agent_id == "supervisor":
+            if any(keyword in query_lower for keyword in ["status", "health", "settings", "files"]):
+                response_type = "markdown"
+        
+        # Content-based detection for responses that contain code blocks
+        if isinstance(response, str):
+            if "```" in response:
+                if "```python" in response:
+                    response_type = "python"
+                elif "```json" in response:
+                    response_type = "json"
+                elif "```yaml" in response or "```yml" in response:
+                    response_type = "yaml"
+                elif "```bash" in response or "```sh" in response:
+                    response_type = "bash"
+                else:
+                    response_type = "markdown"
+        
+        return response_type
+
     @abstractmethod
     async def process_query(self, query: str, context: Optional[Dict[str, Any]] = None) -> Any:
         """Process a query. Must be implemented by subclasses."""
@@ -329,12 +372,19 @@ The bug was fixed by changing the division from `n1 / 0` to `n1 / n2` and adding
             self.success_count += 1
             self.log_activity("query_success", {"query": request.query[:100]})
 
+            # Determine response type based on agent and query
+            response_type = self._determine_response_type(request.query, response)
+
             return QueryResponse(
                 status="success",
                 response=response,
                 agent_id=self.agent_id,
                 timestamp=datetime.now(),
-                metadata={"model": self.config.model, "capabilities": self.config.capabilities},
+                metadata={
+                    "model": self.config.model, 
+                    "capabilities": self.config.capabilities,
+                    "response_type": response_type
+                },
             )
 
         except Exception as e:
