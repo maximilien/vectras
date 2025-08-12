@@ -30,8 +30,8 @@ class E2ETestManager:
         self.base_url = base_url
         self.agent_ports = {
             "testing": 8126,
-            "log-monitor": 8124,
-            "code-fixer": 8125,
+            "logging-monitor": 8124,
+            "coding": 8125,
             "linting": 8127,
             "github": 8128,
         }
@@ -106,12 +106,12 @@ class E2ETestManager:
         print("🔧 Step 2: Testing log monitor error detection...")
 
         # Test that the log monitor can detect errors
-        response = await self.query_agent("log-monitor", "check for recent errors in the logs")
+        response = await self.query_agent("logging-monitor", "check for recent errors in the logs")
         print(f"✅ Log monitor error check: {response['response'][:200]}...")
 
         # Test error pattern detection
         error_response = await self.query_agent(
-            "log-monitor", "what error patterns do you look for?"
+            "logging-monitor", "what error patterns do you look for?"
         )
         print(f"✅ Error patterns response: {error_response['response'][:200]}...")
 
@@ -122,20 +122,18 @@ class E2ETestManager:
 
         return "error_detection_tested"
 
-    async def step_3_log_monitor_detection(self) -> str:
-        """Step 3: Test code fixer analysis."""
+    async def step_3_coding_analysis(self) -> str:
+        """Step 3: Test coding agent analysis."""
         print("🔧 Step 3: Testing code fixer analysis...")
 
         # Test that the code fixer can analyze code issues
         response = await self.query_agent(
-            "code-fixer", "analyze this code: def divide(a, b): return a / 0"
+            "coding", "analyze this code: def divide(a, b): return a / 0"
         )
         print(f"✅ Code analysis response: {response['response'][:200]}...")
 
         # Test fix suggestion capabilities
-        fix_response = await self.query_agent(
-            "code-fixer", "suggest a fix for a divide by zero error"
-        )
+        fix_response = await self.query_agent("coding", "suggest a fix for a divide by zero error")
         print(f"✅ Fix suggestion response: {fix_response['response'][:200]}...")
 
         # Verify the agent responds meaningfully
@@ -186,14 +184,12 @@ class E2ETestManager:
         print("🔧 Step 6: Testing agent coordination and handoffs...")
 
         # Test that agents can coordinate with each other
-        response = await self.query_agent(
-            "testing", "how do you coordinate with the code-fixer agent?"
-        )
+        response = await self.query_agent("testing", "how do you coordinate with the coding agent?")
         print(f"✅ Coordination response: {response['response'][:200]}...")
 
         # Test handoff capabilities
         handoff_response = await self.query_agent(
-            "log-monitor", "how do you handoff errors to other agents?"
+            "logging-monitor", "how do you handoff errors to other agents?"
         )
         print(f"✅ Handoff response: {handoff_response['response'][:200]}...")
 
@@ -240,7 +236,7 @@ class E2ETestManager:
             results["step_2"] = execution_result
 
             # Step 3: Log monitor detection
-            log_result = await self.step_3_log_monitor_detection()
+            log_result = await self.step_3_coding_analysis()
             results["step_3"] = log_result
 
             # Step 4: Code fixer analysis and fix

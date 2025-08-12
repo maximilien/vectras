@@ -42,7 +42,7 @@ class AgentSettings(BaseModel):
     integration_test_path: Optional[str] = None
     enable_bug_injection: Optional[bool] = None
 
-    # Code fixer specific settings
+    # Coding specific settings
     linting_agent_port: Optional[int] = None
     auto_lint_fixes: Optional[bool] = None
 

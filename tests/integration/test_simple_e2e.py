@@ -30,7 +30,7 @@ class SimpleE2ETestManager:
         self.base_url = base_url
         self.agent_ports = {
             "testing": 8126,
-            "log-monitor": 8124,
+            "logging-monitor": 8124,
             "coding": 8125,
             "linting": 8127,
             "github": 8128,

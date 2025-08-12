@@ -9,7 +9,7 @@ backgroundImage: url('https://marp.app/assets/hero-background.svg')
 # Vectras: Multi-Agent AI System
 ## Automated Code Testing & Error Detection
 
-**Maximilien** | YC Hackathon 2024
+**Maximilien.ai** 
 
 ---
 
@@ -21,7 +21,7 @@ A **multi-agent AI system** that automates:
 - **Automated fixes** and code improvements
 - **Version control** operations
 
-**5 specialized AI agents** working together to create a complete development workflow.
+**6 specialized AI agents** working together to create a complete development workflow, all built with OpenAI Agents SDK.
 
 ---
 
@@ -29,8 +29,8 @@ A **multi-agent AI system** that automates:
 
 ```
 ┌─────────────────┐    ┌─────────────────┐    ┌─────────────────┐
-│   Testing       │    │   Log Monitor   │    │   Coding        │
-│   Agent         │    │   Agent         │    │   Agent         │
+│   Testing       │    │   Logging       │    │   Coding        │
+│   Agent         │    │   Monitor       │    │   Agent         │
 │   (Port 8126)   │    │   (Port 8124)   │    │   (Port 8125)   │
 └─────────────────┘    └─────────────────┘    └─────────────────┘
          │                       │                       │
@@ -41,6 +41,12 @@ A **multi-agent AI system** that automates:
                     │   Agent         │    │   Agent         │
                     │   (Port 8127)   │    │   (Port 8128)   │
                     └─────────────────┘    └─────────────────┘
+                                 │
+                    ┌─────────────────┐
+                    │   Supervisor    │
+                    │   Agent         │
+                    │   (Port 8123)   │
+                    └─────────────────┘
 ```
 
 **Real-time coordination** between agents with OpenAI-powered intelligence.
@@ -65,9 +71,9 @@ def divide(n1, n2):
 
 ---
 
-# 🔍 Log Monitor Agent
+# 🔍 Logging Monitor Agent
 
-**Real-time error detection and analysis**
+**Real-time error detection and analysis with enhanced response formatting**
 
 **Monitors for patterns:**
 - `ERROR` - Application errors
@@ -76,7 +82,11 @@ def divide(n1, n2):
 - `FATAL` - Critical failures
 - `CRITICAL` - System issues
 
-**Automatically triggers handoffs** to coding agent when issues are detected.
+**Features:**
+- ✅ Intelligent content type detection with LLM fallback
+- ✅ Structured markdown responses for optimal frontend rendering
+- ✅ Built with OpenAI Agents SDK for enhanced capabilities
+- ✅ Automatically triggers handoffs to coding agent when issues are detected
 
 ---
 

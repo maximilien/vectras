@@ -7,7 +7,7 @@ const $ = (s) => document.querySelector(s);
 function getAgentIcon(agentId) {
   const iconMap = {
     "supervisor": "👑",
-    "log-monitor": "📊", 
+    "logging-monitor": "📊", 
     "coding": "🔧",
     "linting": "✅",
     "testing": "🧪",
@@ -552,33 +552,33 @@ function processMessageContent(content, responseType = null) {
   // If responseType is provided, use it directly instead of auto-detection
   if (responseType) {
     switch (responseType.toLowerCase()) {
-      case "markdown":
-        return renderMarkdown(content);
-      case "json":
-        try {
-          const parsed = JSON.parse(content);
-          const formatted = JSON.stringify(parsed, null, 2);
-          return `<div class="code-block">
+    case "markdown":
+      return renderMarkdown(content);
+    case "json":
+      try {
+        const parsed = JSON.parse(content);
+        const formatted = JSON.stringify(parsed, null, 2);
+        return `<div class="code-block">
             <div class="code-block-header">JSON</div>
             <pre class="language-json"><code class="language-json">${escapeHtml(formatted)}</code></pre>
           </div>`;
-        } catch (e) {
-          // Fall back to text if JSON parsing fails
-          return escapeHtml(content);
-        }
-      case "python":
-        return `<div class="code-block">
+      } catch (e) {
+        // Fall back to text if JSON parsing fails
+        return escapeHtml(content);
+      }
+    case "python":
+      return `<div class="code-block">
           <div class="code-block-header">PYTHON</div>
           <pre class="language-python"><code class="language-python">${escapeHtml(content)}</code></pre>
         </div>`;
-      case "yaml":
-        return `<div class="code-block">
+    case "yaml":
+      return `<div class="code-block">
           <div class="code-block-header">YAML</div>
           <pre class="language-yaml"><code class="language-yaml">${escapeHtml(content)}</code></pre>
         </div>`;
-      case "text":
-      default:
-        return escapeHtml(content);
+    case "text":
+    default:
+      return escapeHtml(content);
     }
   }
 
@@ -1617,7 +1617,7 @@ async function checkAllServices() {
     { name: "api", port: 8121, displayName: "🔌 API" },
     { name: "mcp", port: 8122, displayName: "🔗 MCP" },
     { name: "supervisor", port: 8123, displayName: "👑 Supervisor" },
-    { name: "log-monitor", port: 8124, displayName: "📊 Log Monitor" },
+    { name: "logging-monitor", port: 8124, displayName: "📊 Logging Monitor" },
     { name: "coding", port: 8125, displayName: "🔧 Coding Agent" },
     { name: "linting", port: 8127, displayName: "✅ Linting" },
     { name: "testing", port: 8126, displayName: "🧪 Testing" },

@@ -56,34 +56,46 @@ A multi-agent AI system for automated code testing, error detection, and fix gen
 Vectras consists of 5 specialized AI agents working together:
 
 ### **Testing Agent** (Port 8126)
-- Creates test tools with intentional bugs
-- Generates integration tests
-- Coordinates testing workflows
+- Creates and manages testing tools with custom code
+- Executes tools and captures output
+- Runs tests for specific tools
 - Supports Python, JavaScript, and Bash tools
+- Built with OpenAI Agents SDK for enhanced capabilities
 
-### **Log Monitor Agent** (Port 8124)
+### **Logging Monitor Agent** (Port 8124)
 - Monitors application logs in real-time
 - Detects errors, exceptions, and stack traces
-- Handles error pattern recognition
-- Triggers alerts and handoffs to other agents
+- Handles error pattern recognition and classification
+- Provides structured log summaries with markdown formatting
+- Built with OpenAI Agents SDK for intelligent analysis
 
 ### **Coding Agent** (Port 8125)
 - Analyzes code issues and stack traces
-- Suggests automated fixes
-- Creates GitHub branches and pull requests
+- Suggests automated fixes and improvements
 - Integrates with testing and linting agents
+- Provides detailed code analysis with structured responses
+- Built with OpenAI Agents SDK for enhanced code understanding
 
 ### **Linting Agent** (Port 8127)
-- Performs code quality checks
-- Suggests formatting improvements
+- Performs code quality checks and formatting
+- Suggests improvements and auto-fixes
 - Supports multiple linters (ruff, black, eslint, etc.)
-- Auto-fixes common issues
+- Provides detailed linting reports with markdown formatting
+- Built with OpenAI Agents SDK for intelligent code analysis
 
 ### **GitHub Agent** (Port 8128)
 - Manages version control operations
 - Creates branches and pull requests
-- Handles repository operations
+- Handles repository operations and status checks
 - Integrates with coding agent for automated PRs
+- Built with OpenAI Agents SDK for enhanced GitHub operations
+
+### **Supervisor Agent** (Port 8123)
+- Coordinates all other agents
+- Manages file operations and user settings
+- Provides system-wide status and health monitoring
+- Handles agent handoffs and task coordination
+- Built with OpenAI Agents SDK for intelligent orchestration
 
 ## 🎨 Frontend Features
 
@@ -169,32 +181,38 @@ Each agent is configured in `config.yaml` with:
 ```
 vectras/
 ├── src/vectras/
-│   ├── agents/           # Multi-agent system
-│   │   ├── testing.py    # Test tool creation
-│   │   ├── log_monitor.py # Error detection
-│   │   ├── code_fixer.py # Code analysis & fixes
-│   │   ├── linting.py    # Code quality
-│   │   └── github.py     # Version control
-│   ├── apis/             # REST APIs
-│   ├── mcp/              # Model Context Protocol
-│   └── frontend/         # Web interface
+│   ├── agents/              # Multi-agent system (OpenAI Agents SDK)
+│   │   ├── base_agent.py    # Common agent functionality
+│   │   ├── testing.py       # Test tool creation and execution
+│   │   ├── logging_monitor.py # Error detection and analysis
+│   │   ├── coding.py        # Code analysis & fixes
+│   │   ├── linting.py       # Code quality and formatting
+│   │   ├── github.py        # Version control operations
+│   │   └── supervisor.py    # Agent coordination and orchestration
+│   ├── apis/                # REST APIs
+│   ├── mcp/                 # Model Context Protocol
+│   └── frontend/            # Web interface
 ├── tests/
-│   ├── integration/      # E2E tests
-│   └── unit/            # Unit tests
-├── test_tools/          # Generated test tools
-├── logs/               # Application logs
-└── config/             # Configuration files
+│   ├── integration/         # E2E tests
+│   └── unit/               # Unit tests (marked for SDK migration)
+├── test_tools/             # Generated test tools
+├── logs/                   # Application logs
+├── config/                 # Configuration files
+└── frontend/               # Frontend assets
 ```
 
 ## 🎯 Key Features
 
-- **Multi-Agent Coordination**: Agents communicate and handoff tasks
+- **OpenAI Agents SDK Integration**: All agents built with the latest OpenAI Agents SDK for enhanced capabilities
+- **Enhanced Response Type Detection**: Intelligent content type detection with LLM fallback for optimal frontend rendering
+- **Multi-Agent Coordination**: Agents communicate and handoff tasks seamlessly
 - **Real OpenAI Integration**: Uses actual AI models for intelligent responses
-- **Automated Testing**: Creates and executes test tools with bugs
-- **Error Detection**: Monitors logs and detects issues automatically
-- **Code Quality**: Performs linting and suggests improvements
+- **Automated Testing**: Creates and executes test tools with custom code
+- **Error Detection**: Monitors logs and detects issues automatically with structured analysis
+- **Code Quality**: Performs linting and suggests improvements with detailed reports
 - **Version Control**: Automated branch and PR creation
 - **End-to-End Testing**: Comprehensive integration test suite
+- **Modern Frontend**: Responsive UI with real-time agent status monitoring
 
 ## 🚀 Development
 
@@ -224,14 +242,18 @@ vectras/
 
 ## 📊 Status
 
-- ✅ **Multi-Agent System**: 5 specialized agents working together
-- ✅ **E2E Testing**: Comprehensive integration test suite
-- ✅ **Real OpenAI**: Full AI integration with real models
-- ✅ **Error Detection**: Automated log monitoring and analysis
-- ✅ **Code Quality**: Linting and formatting capabilities
+- ✅ **OpenAI Agents SDK Migration**: All agents migrated to latest SDK
+- ✅ **Enhanced Response Type Detection**: LLM-based content type detection implemented
+- ✅ **Multi-Agent System**: 6 specialized agents working together (including Supervisor)
+- ✅ **E2E Testing**: Comprehensive integration test suite with updated agent references
+- ✅ **Real OpenAI Integration**: Full AI integration with real models
+- ✅ **Error Detection**: Automated log monitoring and analysis with structured output
+- ✅ **Code Quality**: Linting and formatting capabilities with detailed reports
 - ✅ **Version Control**: GitHub integration for automated PRs
-- 🔄 **Tool Creation**: Testing agent tool creation (in progress)
-- 🔄 **Agent Handoffs**: Real-time agent coordination (in progress)
+- ✅ **Agent Coordination**: Real-time agent handoffs and task coordination
+- ✅ **Modern Frontend**: Responsive UI with real-time status monitoring
+- ✅ **Code Quality**: All lint and format checks passing
+- 🔄 **Unit Test Migration**: Unit tests marked for future SDK migration (currently skipped)
 
 ## 🤝 Contributing
 

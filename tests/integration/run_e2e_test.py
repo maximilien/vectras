@@ -30,8 +30,8 @@ class AgentManager:
     def __init__(self):
         self.agents = {
             "testing": {"port": 8126, "module": "src.vectras.agents.testing:app"},
-            "log-monitor": {"port": 8124, "module": "src.vectras.agents.log_monitor:app"},
-            "code-fixer": {"port": 8125, "module": "src.vectras.agents.code_fixer:app"},
+            "logging-monitor": {"port": 8124, "module": "src.vectras.agents.logging_monitor:app"},
+            "coding": {"port": 8125, "module": "src.vectras.agents.coding:app"},
             "linting": {"port": 8127, "module": "src.vectras.agents.linting:app"},
             "github": {"port": 8128, "module": "src.vectras.agents.github:app"},
         }
@@ -204,7 +204,7 @@ Requirements:
     - Valid OpenAI API key for real agent interactions
 
 This script:
-1. Starts all Vectras agents (testing, log-monitor, code-fixer, linting, github)
+1. Starts all Vectras agents (testing, logging-monitor, coding, linting, github)
 2. Verifies agent health
 3. Runs the comprehensive end-to-end test with real OpenAI
 4. Cleans up and stops all agents
