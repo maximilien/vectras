@@ -38,14 +38,14 @@ agents:
       user_settings_file: "./config/user_settings.yaml"
       handoff_timeout: 30
 
-  - id: "log-monitor"
-    name: "Log Monitor Agent"
+  - id: "logging-monitor"
+    name: "Logging Monitor Agent"
     description: "Monitors application logs for errors, stack traces, and notifications to other agents"
     enabled: true
     model: "gpt-4o-mini"
     temperature: 0.1
     max_tokens: 1500
-    system_prompt: "You are the Vectras log monitor agent. You continuously monitor application logs, detect errors and stack traces, and notify other agents when issues are found. You provide detailed error analysis and context."
+    system_prompt: "You are the Vectras logging monitor agent. You continuously monitor application logs, detect errors and stack traces, and notify other agents when issues are found. You provide detailed error analysis and context."
     capabilities:
       - "Log Monitoring"
       - "Error Detection"
@@ -59,7 +59,7 @@ agents:
     memory:
       enabled: true
       type: "sqlite"
-      database_path: "./data/log_monitor_memory.db"
+      database_path: "./data/logging_monitor_memory.db"
       session_ttl: 7200
       max_conversations: 50
     settings:

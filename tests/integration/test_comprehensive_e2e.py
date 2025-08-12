@@ -30,8 +30,8 @@ class ComprehensiveE2ETestManager:
         self.base_url = base_url
         self.agent_ports = {
             "testing": 8126,
-            "log-monitor": 8124,
-            "code-fixer": 8125,
+            "logging-monitor": 8124,
+            "coding": 8125,
             "linting": 8127,
             "github": 8128,
         }
@@ -108,11 +108,11 @@ class ComprehensiveE2ETestManager:
         print("\n🔧 Step 2: Code fixer analyzing and fixing divide tool...")
 
         # Analyze the divide tool
-        analysis_response = await self.query_agent("code-fixer", "analyze divide tool")
+        analysis_response = await self.query_agent("coding", "analyze divide tool")
         print(f"✅ Analysis: {analysis_response['response'][:200]}...")
 
         # Fix the divide tool
-        fix_response = await self.query_agent("code-fixer", "fix divide tool")
+        fix_response = await self.query_agent("coding", "fix divide tool")
         print(f"✅ Fix: {fix_response['response'][:200]}...")
 
         # Verify we get meaningful responses

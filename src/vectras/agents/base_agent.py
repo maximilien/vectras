@@ -61,6 +61,11 @@ class AgentStatus(BaseModel):
 class BaseAgent(ABC):
     """Base class for all Vectras agents."""
 
+    @abstractmethod
+    async def process_query(self, query: str, context: Optional[Dict[str, Any]] = None) -> Any:
+        """Process a query. Must be implemented by subclasses."""
+        pass
+
     def __init__(self, agent_id: str):
         self.agent_id = agent_id
         self.config = get_agent_config(agent_id)
@@ -198,7 +203,7 @@ async def test_agent_coordination():
 ```"""
 
             # Provide better fake responses for other agents
-            elif self.agent_id == "log-monitor":
+            elif self.agent_id == "logging-monitor":
                 if "error" in user_message.lower() or "handoff" in user_message.lower():
                     return "Error detected in divide tool execution. Handing off to coding agent for analysis and fix."
                 return "Monitoring logs for errors and issues."
@@ -312,46 +317,194 @@ The bug was fixed by changing the division from `n1 / 0` to `n1 / n2` and adding
 
     def _determine_response_type(self, query: str, response: Any) -> str:
         """Determine the response type based on the query and response content."""
-        query_lower = query.lower()
-        
-        # Default response type
-        response_type = "text"
-        
-        # Agent-specific response type detection
-        if self.agent_id == "github":
-            if any(keyword in query_lower for keyword in ["status", "help", "latest pr", "recent pr", "list branches", "create"]):
+        return determine_response_type(self.agent_id, query, response)
+
+
+def determine_response_type(agent_id: str, query: str, response: Any) -> str:
+    """Determine the response type based on the agent, query and response content.
+
+    This is a utility function that can be used by all agents to determine
+    the appropriate response type for frontend rendering.
+
+    Args:
+        agent_id: The ID of the agent (e.g., "github", "coding", "testing")
+        query: The user's query
+        response: The agent's response
+
+    Returns:
+        str: The response type ("text", "markdown", "python", "json", "yaml", "bash")
+    """
+    query_lower = query.lower()
+
+    # Default response type
+    response_type = "text"
+
+    # Agent-specific response type detection
+    if agent_id == "github":
+        if any(
+            keyword in query_lower
+            for keyword in ["status", "help", "latest pr", "recent pr", "list branches", "create"]
+        ):
+            response_type = "markdown"
+    elif agent_id == "testing":
+        if any(
+            keyword in query_lower
+            for keyword in ["list tools", "execute", "run test", "create tool", "status"]
+        ):
+            response_type = "markdown"
+    elif agent_id == "linting":
+        if any(keyword in query_lower for keyword in ["lint", "quality", "format", "status"]):
+            response_type = "markdown"
+    elif agent_id == "coding":
+        if any(keyword in query_lower for keyword in ["analyze", "fix", "bug", "error", "status"]):
+            response_type = "markdown"
+    elif agent_id == "logging-monitor":
+        if any(keyword in query_lower for keyword in ["monitor", "check logs", "error", "status"]):
+            response_type = "markdown"
+    elif agent_id == "supervisor":
+        if any(keyword in query_lower for keyword in ["status", "health", "settings", "files"]):
+            response_type = "markdown"
+
+    # Content-based detection for responses that contain code blocks
+    if isinstance(response, str):
+        if "```" in response:
+            if "```python" in response:
+                response_type = "python"
+            elif "```json" in response:
+                response_type = "json"
+            elif "```yaml" in response or "```yml" in response:
+                response_type = "yaml"
+            elif "```bash" in response or "```sh" in response:
+                response_type = "bash"
+            else:
                 response_type = "markdown"
-        elif self.agent_id == "testing":
-            if any(keyword in query_lower for keyword in ["list tools", "execute", "run test", "create tool", "status"]):
-                response_type = "markdown"
-        elif self.agent_id == "linting":
-            if any(keyword in query_lower for keyword in ["lint", "quality", "format", "status"]):
-                response_type = "markdown"
-        elif self.agent_id == "coding":
-            if any(keyword in query_lower for keyword in ["analyze", "fix", "bug", "error", "status"]):
-                response_type = "markdown"
-        elif self.agent_id == "log-monitor":
-            if any(keyword in query_lower for keyword in ["monitor", "check logs", "error", "status"]):
-                response_type = "markdown"
-        elif self.agent_id == "supervisor":
-            if any(keyword in query_lower for keyword in ["status", "health", "settings", "files"]):
-                response_type = "markdown"
-        
-        # Content-based detection for responses that contain code blocks
-        if isinstance(response, str):
-            if "```" in response:
-                if "```python" in response:
-                    response_type = "python"
-                elif "```json" in response:
-                    response_type = "json"
-                elif "```yaml" in response or "```yml" in response:
-                    response_type = "yaml"
-                elif "```bash" in response or "```sh" in response:
-                    response_type = "bash"
-                else:
-                    response_type = "markdown"
-        
-        return response_type
+
+        # Enhanced content analysis for markdown detection
+        elif _looks_like_markdown(response):
+            response_type = "markdown"
+
+    return response_type
+
+
+def _looks_like_markdown(content: str) -> bool:
+    """Analyze content to determine if it looks like markdown."""
+    if not isinstance(content, str):
+        return False
+
+    # Quick heuristics for markdown detection
+    markdown_indicators = [
+        # Headers
+        content.count("# ") > 0,
+        content.count("## ") > 0,
+        content.count("### ") > 0,
+        # Lists
+        content.count("- ") > 2,
+        content.count("* ") > 2,
+        content.count("1. ") > 2,
+        # Bold/italic
+        content.count("**") >= 2,
+        content.count("*") >= 4,
+        content.count("__") >= 2,
+        # Code blocks
+        content.count("`") >= 2,
+        # Links
+        content.count("[") > 0 and content.count("](") > 0,
+        # Tables
+        content.count("|") > 3,
+        # Blockquotes
+        content.count("> ") > 0,
+        # Horizontal rules
+        content.count("---") > 0 or content.count("***") > 0,
+    ]
+
+    # If we have multiple markdown indicators, it's likely markdown
+    markdown_score = sum(markdown_indicators)
+
+    # Additional check: if content has structured formatting with newlines
+    lines = content.split("\n")
+    structured_lines = sum(
+        1 for line in lines if line.strip().startswith(("#", "-", "*", "1.", "|", ">", "`"))
+    )
+
+    # Consider it markdown if we have a good score or structured content
+    return markdown_score >= 2 or (structured_lines >= 3 and len(lines) > 5)
+
+
+async def determine_response_type_with_llm(agent_id: str, query: str, response: Any) -> str:
+    """Use LLM to determine response type when it's not obvious.
+
+    This function uses an LLM to analyze the response content and determine
+    the most appropriate response type for frontend rendering.
+
+    Args:
+        agent_id: The ID of the agent
+        query: The user's query
+        response: The agent's response
+
+    Returns:
+        str: The response type ("text", "markdown", "python", "json", "yaml", "bash")
+    """
+    # Import os at the beginning of the function
+    import os
+
+    try:
+        # First try the rule-based approach
+        rule_based_type = determine_response_type(agent_id, query, response)
+
+        # If we're confident about the type, return it
+        if rule_based_type != "text" or not isinstance(response, str):
+            return rule_based_type
+
+        # For text responses, use LLM to determine if it should be markdown
+        if isinstance(response, str) and len(response) > 50:
+            # Check if we're in fake OpenAI mode
+            if os.getenv("VECTRAS_FAKE_OPENAI") == "1":
+                # In fake mode, just use rule-based detection
+                return rule_based_type
+
+            # Use a simple prompt to determine if content should be markdown
+            prompt = f"""Analyze this response content and determine if it should be rendered as markdown or plain text.
+
+Response content:
+{response[:500]}{"..." if len(response) > 500 else ""}
+
+Consider:
+- Does it contain structured information (lists, headers, tables)?
+- Does it have formatting that would benefit from markdown rendering?
+- Is it a simple text response or does it need formatting?
+
+Respond with only: "markdown" or "text"
+"""
+
+            # Use OpenAI to determine the type
+            from openai import AsyncOpenAI
+
+            client = AsyncOpenAI(
+                api_key=os.getenv("OPENAI_API_KEY"),
+                base_url=os.getenv("OPENAI_BASE_URL") or None,
+            )
+
+            completion = await client.chat.completions.create(
+                model="gpt-4o-mini",
+                messages=[{"role": "user", "content": prompt}],
+                max_tokens=10,
+                temperature=0,
+            )
+
+            llm_response = completion.choices[0].message.content.strip().lower()
+
+            if llm_response in ["markdown", "text"]:
+                return llm_response
+            else:
+                # Fallback to rule-based detection
+                return rule_based_type
+
+    except Exception as e:
+        print(f"Warning: LLM response type determination failed: {e}")
+        # Fallback to rule-based detection
+        return determine_response_type(agent_id, query, response)
+
+    return rule_based_type
 
     @abstractmethod
     async def process_query(self, query: str, context: Optional[Dict[str, Any]] = None) -> Any:
@@ -381,9 +534,9 @@ The bug was fixed by changing the division from `n1 / 0` to `n1 / n2` and adding
                 agent_id=self.agent_id,
                 timestamp=datetime.now(),
                 metadata={
-                    "model": self.config.model, 
+                    "model": self.config.model,
                     "capabilities": self.config.capabilities,
-                    "response_type": response_type
+                    "response_type": response_type,
                 },
             )
 

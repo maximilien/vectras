@@ -108,7 +108,7 @@ def create_app() -> FastAPI:
                         # Add port mapping for different agents
                         port_mapping = {
                             "supervisor": 8123,
-                            "log-monitor": 8124,
+                            "logging-monitor": 8124,
                             "coding": 8125,
                             "linting": 8127,
                             "testing": 8126,

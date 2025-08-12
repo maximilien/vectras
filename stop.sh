@@ -41,7 +41,7 @@ status() {
   if [ -f .pid ]; then
     echo "- PID file exists (.pid):"
     local line_num=0
-    local service_names=("api" "mcp" "supervisor" "log-monitor" "code-fixer" "linting" "testing" "github" "ui")
+    local service_names=("api" "mcp" "supervisor" "logging-monitor" "coding" "linting" "testing" "github" "ui")
     while read -r pid; do
       [ -z "${pid}" ] && continue
       local service_name=${service_names[$line_num]:-unknown}
@@ -59,7 +59,7 @@ status() {
 
   echo "- Ports:"
   local ports=(${VECTRAS_UI_PORT:-8120} ${VECTRAS_API_PORT:-8121} ${VECTRAS_MCP_PORT:-8122} ${VECTRAS_AGENT_PORT:-8123} 8124 8125 8126 8127 8128)
-      local port_names=("UI" "API" "MCP" "Supervisor" "Log Monitor" "Coding" "Testing" "Linting" "GitHub")
+      local port_names=("UI" "API" "MCP" "Supervisor" "Logging Monitor" "Coding" "Testing" "Linting" "GitHub")
   for i in "${!ports[@]}"; do
     local port=${ports[$i]}
     local name=${port_names[$i]}
@@ -74,7 +74,7 @@ status() {
 stop_services() {
   if [ -f .pid ]; then
     local line_num=0
-    local service_names=("api" "mcp" "supervisor" "log-monitor" "code-fixer" "linting" "testing" "github" "ui")
+    local service_names=("api" "mcp" "supervisor" "logging-monitor" "coding" "linting" "testing" "github" "ui")
     while read -r pid; do
       [ -n "${pid}" ] && kill ${pid} 2>/dev/null || true
       ((line_num++))

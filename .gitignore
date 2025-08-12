@@ -209,7 +209,7 @@ __marimo__/
 # Vectras dev
 .pid
 .env
-.prompts.txt
+.todos-prompts.txt
 logs/
 TODOs.md
 
@@ -217,3 +217,4 @@ TODOs.md
 node_modules/
 package-lock.json
 test_tools/
+config/

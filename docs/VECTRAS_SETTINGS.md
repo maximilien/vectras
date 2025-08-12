@@ -79,6 +79,8 @@ The current implementation is read-only. Future versions may include:
 - **Validation**: Real-time validation of configuration changes
 - **Backup**: Automatic backup before making changes
 - **Search**: Search functionality across all configuration sections
+- **Enhanced Response Type Detection**: LLM-based content type detection for optimal frontend rendering
+- **OpenAI Agents SDK Integration**: All agents now use the latest SDK for enhanced capabilities
 
 ## Usage Examples
 

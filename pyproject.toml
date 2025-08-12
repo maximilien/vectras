@@ -40,8 +40,11 @@ minversion = "8.0"
 addopts = "-ra"
 testpaths = ["tests"]
 asyncio_mode = "auto"
+python_files = ["test_*.py"]
+python_classes = ["Test*"]
+python_functions = ["test_*"]
 filterwarnings = [
-    "ignore::pytest.PytestCollectionWarning:src/vectras/agents/testing.py",
+    "ignore::pytest.PytestCollectionWarning",
 ]
 
 [tool.ruff]
@@ -58,6 +61,7 @@ select = [
 ]
 ignore = [
   "E501",  # line length handled by formatter preference
+  "F821",  # undefined name - expected in skipped test files
 ]
 
 [tool.ruff.format]

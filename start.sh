@@ -53,7 +53,7 @@ status() {
   if [ -f .pid ]; then
     echo "- PID file exists (.pid):"
     local line_num=0
-    local service_names=("api" "mcp" "supervisor" "log-monitor" "code-fixer" "linting" "testing" "github" "ui")
+    local service_names=("api" "mcp" "supervisor" "logging-monitor" "coding" "linting" "testing" "github" "ui")
     while read -r pid; do
       [ -z "${pid}" ] && continue
       local service_name=${service_names[$line_num]:-unknown}
@@ -71,7 +71,7 @@ status() {
 
   echo "- Ports:"
   local ports=(${VECTRAS_UI_PORT:-8120} ${VECTRAS_API_PORT:-8121} ${VECTRAS_MCP_PORT:-8122} ${VECTRAS_AGENT_PORT:-8123} 8124 8125 8126 8127 8128)
-      local port_names=("UI" "API" "MCP" "Supervisor" "Log Monitor" "Coding" "Testing" "Linting" "GitHub")
+      local port_names=("UI" "API" "MCP" "Supervisor" "Logging Monitor" "Coding" "Testing" "Linting" "GitHub")
   for i in "${!ports[@]}"; do
     local port=${ports[$i]}
     local name=${port_names[$i]}
@@ -90,7 +90,7 @@ stop_existing() {
   if [ -f .pid ]; then
     echo "📋 Found PID file, stopping existing processes..."
     local line_num=0
-    local service_names=("api" "mcp" "supervisor" "log-monitor" "code-fixer" "linting" "testing" "github" "ui")
+    local service_names=("api" "mcp" "supervisor" "logging-monitor" "coding" "linting" "testing" "github" "ui")
     while read -r pid; do
       if [ -n "${pid}" ] && kill -0 ${pid} 2>/dev/null; then
         local service_name=${service_names[$line_num]:-unknown}
@@ -136,8 +136,8 @@ start_services() {
   start_service api env -u VIRTUAL_ENV uv run uvicorn src.vectras.apis.api:app --host ${VECTRAS_API_HOST:-localhost} --port ${VECTRAS_API_PORT:-8121}
   start_service mcp env -u VIRTUAL_ENV uv run uvicorn src.vectras.mcp.server:app --host ${VECTRAS_MCP_HOST:-localhost} --port ${VECTRAS_MCP_PORT:-8122}
   start_service supervisor env -u VIRTUAL_ENV uv run uvicorn src.vectras.agents.supervisor:app --host ${VECTRAS_AGENT_HOST:-localhost} --port ${VECTRAS_AGENT_PORT:-8123}
-  start_service log-monitor env -u VIRTUAL_ENV uv run uvicorn src.vectras.agents.log_monitor:app --host localhost --port 8124
-  start_service coding env -u VIRTUAL_ENV uv run uvicorn src.vectras.agents.code_fixer:app --host localhost --port 8125
+  start_service logging-monitor env -u VIRTUAL_ENV uv run uvicorn src.vectras.agents.logging_monitor:app --host localhost --port 8124
+  start_service coding env -u VIRTUAL_ENV uv run uvicorn src.vectras.agents.coding:app --host localhost --port 8125
   start_service linting env -u VIRTUAL_ENV uv run uvicorn src.vectras.agents.linting:app --host localhost --port 8127
   start_service testing env -u VIRTUAL_ENV uv run uvicorn src.vectras.agents.testing:app --host localhost --port 8126
   start_service github env -u VIRTUAL_ENV uv run uvicorn src.vectras.agents.github:app --host localhost --port 8128
