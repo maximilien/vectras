@@ -4,7 +4,17 @@ theme: default
 paginate: true
 backgroundColor: #fff
 backgroundImage: url('https://marp.app/assets/hero-background.svg')
+
 ---
+
+<!--
+To generate PDF or HTML from this presentation:
+npx @marp-team/marp-cli@latest PRESENTATION.md -o ~/Desktop/vectras.pdf
+npx @marp-team/marp-cli@latest PRESENTATION.md -o ~/Desktop/vectras.html
+
+For HTML with speaker notes:
+npx @marp-team/marp-cli@latest PRESENTATION.md --html --allow-local-files -o ~/Desktop/vectras.html
+-->
 
 # Vectras: Multi-Agent AI System
 ## Automated Code Testing & Error Detection
@@ -66,23 +76,48 @@ A **multi-agent AI system** that automates:
 
 **Configurable via `config.yaml`** for custom default queries.
 
+## 🖼️ New Frontend Interface
+
+### Modern Three-Pane Layout
+
+<div style="display: flex; justify-content: center; margin: 20px 0;">
+  <img src="../images/ragme1.png" alt="RAGme.ai Interface - Main Chat" style="width: 80%; height: auto; border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.15);">
+</div>
+
+**Key Features:**
+- **Left Sidebar**: Chat history with collapsible design
+- **Center**: Main chat area with markdown support
+- **Right Sidebar**: Document management with D3.js visualizations
+- **Real-time Updates**: WebSocket communication for live interactions
+
 ---
 
-# 🧪 Testing Agent
+## 📊 Agent Management & Visualizations
 
-**Creates and manages test tools with intentional bugs**
+### Interactive Agent Dashboard
 
-```python
-def divide(n1, n2):
-    # Intentional bug: divides by 0 instead of n2
-    return n1 / 0  # This will cause an error!
-```
+<div style="display: flex; justify-content: center; margin: 20px 0;">
+  <img src="../images/vectras1.png" alt="Vectras.ai Interface - Agents  Management" style="width: 80%; height: auto; border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.15);">
+</div>
 
-**Capabilities:**
-- ✅ Creates test tools in Python, JavaScript, Bash
-- ✅ Introduces controlled bugs for testing
-- ✅ Generates integration tests
-- ✅ Coordinates with other agents
+**Advanced Features:**
+- **System status**: Get status of entire system at once
+- **Agent satus**: Agent card to see each agent status
+- **Agent chat**: Chat to each agent individually
+- **Smart chat**: Remember recent conversation and easily ask query again
+
+---
+
+## 📊 System Configuration Visualizations
+
+### See Current System Configuration
+
+<div style="display: flex; justify-content: center; margin: 20px 0;">
+  <img src="../images/vectras2.png" alt="Vectras.ai Interface - System Configuration" style="width: 80%; height: auto; border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.15);">
+</div>
+
+**Advanced Features:**
+- **Agent config**: See configuration of each agent
 
 ---
 
@@ -102,6 +137,28 @@ def divide(n1, n2):
 - ✅ Structured markdown responses for optimal frontend rendering
 - ✅ Built with OpenAI Agents SDK for enhanced capabilities
 - ✅ Automatically triggers handoffs to coding agent when issues are detected
+
+---
+
+
+
+---
+
+# 🧪 Testing Agent
+
+**Creates and manages test tools with intentional bugs**
+
+```python
+def divide(n1, n2):
+    # Intentional bug: divides by 0 instead of n2
+    return n1 / 0  # This will cause an error!
+```
+
+**Capabilities:**
+- ✅ Creates test tools in Python, JavaScript, Bash
+- ✅ Introduces controlled bugs for testing
+- ✅ Generates integration tests
+- ✅ Coordinates with other agents
 
 ---
 
