@@ -172,10 +172,28 @@ main {
   flex-direction: column;
   gap: 2px;
 }
+
+.agent-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 8px;
+}
+
 .agent-name { 
   font-weight: 600; 
   font-size: 14px; 
+  flex: 1;
 }
+
+.agent-status-summary {
+  font-size: 11px;
+  color: var(--muted);
+  text-align: right;
+  white-space: nowrap;
+  font-weight: 500;
+}
+
 .agent-desc { 
   font-size: 12px; 
   color: var(--muted); 
@@ -1186,5 +1204,64 @@ pre[class*="language-"] {
     transform: scale(1);
     opacity: 1;
   }
+}
+
+.agent-status-container {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-shrink: 0;
+}
+
+.agent-status-summary {
+  font-size: 11px;
+  color: var(--muted);
+  text-align: right;
+  white-space: nowrap;
+  font-weight: 500;
+}
+
+.status-badge {
+  font-size: 10px;
+  padding: 2px 6px;
+  border-radius: 4px;
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.status-badge.active {
+  background: #22c55e;
+  color: #0b1220;
+}
+
+.status-badge.offline {
+  background: #6b7280;
+  color: var(--text);
+}
+
+.agent-status-details {
+  margin-bottom: 12px;
+  padding: 8px;
+  background: var(--bg);
+  border-radius: 4px;
+  border: 1px solid var(--ring);
+}
+
+.status-summary-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 12px;
+}
+
+.status-label {
+  color: var(--muted);
+  font-weight: 500;
+}
+
+.status-summary-value {
+  color: var(--text);
+  font-weight: 600;
 }
 

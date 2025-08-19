@@ -4,6 +4,7 @@
 import os
 from pathlib import Path
 
+import httpx
 import yaml
 from fastapi import FastAPI, Response
 from fastapi.middleware.cors import CORSMiddleware
@@ -122,6 +123,155 @@ def create_app() -> FastAPI:
                 return {"agents": []}
         except Exception as e:
             return {"agents": [], "error": str(e)}
+
+    @app.get("/api/agents-statuses")
+    async def get_agents_statuses():
+        """Get status information for all agents."""
+        import httpx
+        from datetime import datetime, timedelta
+        
+        agent_ports = {
+            "supervisor": 8123,
+            "logging-monitor": 8124,
+            "coding": 8125,
+            "linting": 8127,
+            "testing": 8126,
+            "github": 8128
+        }
+        
+        status_data = {}
+        
+        async with httpx.AsyncClient(timeout=5.0) as client:
+            for agent_id, port in agent_ports.items():
+                try:
+                    # Get basic status
+                    status_response = await client.get(f"http://localhost:{port}/status")
+                    if status_response.status_code == 200:
+                        status_info = status_response.json()
+                        
+                        # Get agent-specific status summary
+                        status_summary = await get_agent_status_summary(agent_id, status_info, client)
+                        status_data[agent_id] = status_summary
+                    else:
+                        status_data[agent_id] = {
+                            "status": "offline",
+                            "summary": "Offline ❌",
+                            "details": f"HTTP {status_response.status_code}"
+                        }
+                except Exception as e:
+                    status_data[agent_id] = {
+                        "status": "offline",
+                        "summary": "Offline ❌",
+                        "details": str(e)
+                    }
+        
+        return {"agents_statuses": status_data}
+
+    async def get_agent_status_summary(agent_id: str, status_info: dict, client: httpx.AsyncClient) -> dict:
+        """Get a summary status for a specific agent."""
+        from datetime import datetime, timedelta
+        
+        try:
+            if agent_id == "supervisor":
+                # For supervisor, check other agents' health
+                agent_ports = {
+                    "supervisor": 8123,
+                    "logging-monitor": 8124,
+                    "coding": 8125,
+                    "linting": 8127,
+                    "testing": 8126,
+                    "github": 8128
+                }
+                
+                online_count = 0
+                offline_count = 0
+                
+                for other_agent_id, port in agent_ports.items():
+                    try:
+                        health_response = await client.get(f"http://localhost:{port}/health", timeout=2.0)
+                        if health_response.status_code == 200:
+                            online_count += 1
+                        else:
+                            offline_count += 1
+                    except:
+                        offline_count += 1
+                
+                if offline_count == 0:
+                    summary = f"{online_count} agents ✅"
+                else:
+                    summary = f"{online_count} agents ✅ {offline_count} agents ❌"
+                    
+            elif agent_id == "logging-monitor":
+                # Get error count from recent logs
+                error_count = status_info.get("error_count", 0)
+                summary = f"{error_count} errors (last hour)"
+                
+            elif agent_id == "coding":
+                # Get recent analysis count
+                recent_activities = status_info.get("recent_activities", [])
+                analysis_count = sum(1 for activity in recent_activities 
+                                   if "analysis" in activity.get("activity", "").lower())
+                fixes_count = sum(1 for activity in recent_activities 
+                                if "fix" in activity.get("activity", "").lower())
+                
+                if analysis_count > 0 or fixes_count > 0:
+                    summary = f"{analysis_count} analysis, {fixes_count} fixes (last day)"
+                else:
+                    summary = "No recent activity"
+                    
+            elif agent_id == "linting":
+                # Get files linted count
+                recent_activities = status_info.get("recent_activities", [])
+                files_linted = sum(1 for activity in recent_activities 
+                                 if "lint" in activity.get("activity", "").lower())
+                
+                if files_linted > 0:
+                    summary = f"{files_linted} files fixed (today)"
+                else:
+                    summary = "No files linted today"
+                    
+            elif agent_id == "testing":
+                # Get test results
+                recent_activities = status_info.get("recent_activities", [])
+                tests_passed = sum(1 for activity in recent_activities 
+                                 if "test" in activity.get("activity", "").lower() 
+                                 and "pass" in activity.get("activity", "").lower())
+                tests_failed = sum(1 for activity in recent_activities 
+                                 if "test" in activity.get("activity", "").lower() 
+                                 and "fail" in activity.get("activity", "").lower())
+                
+                if tests_passed > 0 or tests_failed > 0:
+                    summary = f"{tests_passed + tests_failed} tests ✅ (today)"
+                else:
+                    summary = "No tests run today"
+                    
+            elif agent_id == "github":
+                # Get PR count
+                recent_activities = status_info.get("recent_activities", [])
+                pr_count = sum(1 for activity in recent_activities 
+                              if "pr" in activity.get("activity", "").lower() 
+                              or "pull request" in activity.get("activity", "").lower())
+                
+                if pr_count > 0:
+                    summary = f"{pr_count} PRs 📤 (today)"
+                else:
+                    summary = "No PRs today"
+                    
+            else:
+                summary = "Active"
+                
+            return {
+                "status": "active",
+                "summary": summary,
+                "details": status_info
+            }
+            
+        except Exception as e:
+            return {
+                "status": "error",
+                "summary": "Error getting status",
+                "details": str(e)
+            }
 
     @app.get("/api/config")
     async def get_config():

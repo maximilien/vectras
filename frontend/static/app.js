@@ -31,6 +31,8 @@ const state = {
   isTyping: false, // Track if agent is currently responding
   chatScrollPositions: {}, // Store scroll position for each chat
   configData: null, // Store configuration data
+  agents_statuses: {}, // Store agent status information
+  statusUpdateInterval: null, // Store interval for status updates
 };
 
 // Load configuration from API
@@ -447,6 +449,12 @@ async function loadAgents() {
 
     renderAgents();
     renderAgentCard();
+    
+    // Load initial agents statuses
+    await loadAgentsStatuses();
+    
+    // Start periodic status updates
+    startStatusUpdates();
   } catch (error) {
     // Use fallback agent
     state.agents = [
@@ -466,6 +474,43 @@ async function loadAgents() {
   }
 }
 
+// Load agents statuses from API
+async function loadAgentsStatuses() {
+  try {
+    const response = await fetch("/api/agents-statuses");
+    const data = await response.json();
+    
+    if (data.agents_statuses) {
+      state.agents_statuses = data.agents_statuses;
+      renderAgents(); // Re-render to show updated status
+      renderAgentCard(); // Re-render agent card to show updated status
+    }
+  } catch (error) {
+    // Failed to load agents statuses
+  }
+}
+
+// Start periodic status updates
+function startStatusUpdates() {
+  // Clear any existing interval
+  if (state.statusUpdateInterval) {
+    clearInterval(state.statusUpdateInterval);
+  }
+  
+  // Update status every 15 seconds
+  state.statusUpdateInterval = setInterval(async () => {
+    await loadAgentsStatuses();
+  }, 15000);
+}
+
+// Stop status updates
+function stopStatusUpdates() {
+  if (state.statusUpdateInterval) {
+    clearInterval(state.statusUpdateInterval);
+    state.statusUpdateInterval = null;
+  }
+}
+
 function renderAgents() {
   const list = $("#agent-list");
   list.innerHTML = "";
@@ -480,9 +525,22 @@ function renderAgents() {
     // Get agent icon
     const agentIcon = getAgentIcon(a.id);
 
+    // Get agent status
+    const agentStatus = state.agents_statuses[a.id] || { status: "offline", summary: "Offline ❌" };
+    const isActive = agentStatus.status === "active";
+    const statusText = isActive ? "Active" : "Offline";
+    const statusClass = isActive ? "active" : "offline";
+    const statusSummary = agentStatus.summary || "Unknown status";
+
     li.innerHTML = `
       <div class="agent-item">
-        <div class="agent-name">${agentIcon} ${a.name}</div>
+        <div class="agent-header">
+          <div class="agent-name">${agentIcon} ${a.name}</div>
+          <div class="agent-status-container">
+            <span class="agent-status-summary">${statusSummary}</span>
+            <span class="status-badge ${statusClass}">${statusText}</span>
+          </div>
+        </div>
         <div class="agent-tags">${tagBadges}</div>
         <div class="agent-desc">${a.description}</div>
       </div>
@@ -505,11 +563,21 @@ function renderAgentCard() {
   // Get agent icon
   const agentIcon = getAgentIcon(agent.id);
 
+  // Get agent status
+  const agentStatus = state.agents_statuses[agent.id] || { status: "offline", summary: "Offline ❌" };
+  const isActive = agentStatus.status === "active";
+  const statusText = isActive ? "Active" : "Offline";
+  const statusClass = isActive ? "active" : "offline";
+  const statusSummary = agentStatus.summary || "Unknown status";
+
   // Update the header with agent name and status
   const agentName = $("#agent-name");
-  const agentStatus = $("#agent-status");
+  const agentStatusElement = $("#agent-status");
   if (agentName) agentName.textContent = `${agentIcon} ${agent.name}`;
-  if (agentStatus) agentStatus.textContent = "Active";
+  if (agentStatusElement) {
+    agentStatusElement.className = `status-badge ${statusClass}`;
+    agentStatusElement.textContent = statusText;
+  }
 
   // Update the content area
   const content = $("#agent-card-content");
@@ -527,6 +595,12 @@ function renderAgentCard() {
 
   content.innerHTML = `
     <div class="agent-description">${agent.description}</div>
+    <div class="agent-status-details">
+      <div class="status-summary-row">
+        <span class="status-label">Status Summary:</span>
+        <span class="status-summary-value">${statusSummary}</span>
+      </div>
+    </div>
     <div class="agent-config">
       <div class="config-row"><span>Port:</span> <code>${agent.port}</code></div>
       <div class="config-row"><span>Endpoint:</span> <code>${agent.endpoint}</code></div>
@@ -1919,5 +1993,10 @@ function formatMessageTime(timestamp) {
   
   return date.toLocaleDateString();
 }
+
+// Cleanup on page unload
+window.addEventListener("beforeunload", () => {
+  stopStatusUpdates();
+});
 
 init();
