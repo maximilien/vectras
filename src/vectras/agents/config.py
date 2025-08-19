@@ -81,6 +81,35 @@ class AgentConfig(BaseModel):
     settings: AgentSettings = Field(default_factory=AgentSettings)
 
 
+class EnvironmentSettings(BaseModel):
+    """Environment-specific settings."""
+
+    # OpenAI Configuration
+    openai_api_key: Optional[str] = None
+    openai_model: str = "gpt-4o-mini"
+    vectras_fake_openai: str = "0"
+
+    # Service Ports
+    vectras_ui_port: str = "8120"
+    vectras_api_port: str = "8121"
+    vectras_mcp_port: str = "8122"
+    vectras_agent_port: str = "8123"
+
+    # Service Hosts
+    vectras_ui_host: str = "localhost"
+    vectras_api_host: str = "localhost"
+    vectras_mcp_host: str = "localhost"
+    vectras_agent_host: str = "localhost"
+
+    # GitHub Configuration
+    github_token: Optional[str] = None
+    github_org: Optional[str] = None
+    github_repo: Optional[str] = None
+
+    # Development/Testing
+    pythonpath: Optional[str] = None
+
+
 class GlobalSettings(BaseModel):
     """Global settings for all agents."""
 
@@ -89,6 +118,7 @@ class GlobalSettings(BaseModel):
     default_max_tokens: int = 1000
     api_timeout: int = 30
     enable_logging: bool = True
+    environment: EnvironmentSettings = Field(default_factory=EnvironmentSettings)
 
 
 class VectrasConfig(BaseModel):
@@ -169,3 +199,60 @@ def get_logs_directory() -> Path:
 def ensure_directory(path: Path) -> None:
     """Ensure a directory exists, creating it if necessary."""
     path.mkdir(parents=True, exist_ok=True)
+
+
+def get_environment_setting(
+    setting_name: str, config: Optional[VectrasConfig] = None
+) -> Optional[str]:
+    """Get an environment setting from the configuration."""
+    if config is None:
+        config = load_config()
+
+    # Convert setting name to the format used in EnvironmentSettings
+    if hasattr(config.settings.environment, setting_name):
+        return getattr(config.settings.environment, setting_name)
+
+    return None
+
+
+def get_openai_api_key(config: Optional[VectrasConfig] = None) -> Optional[str]:
+    """Get OpenAI API key from configuration."""
+    return get_environment_setting("openai_api_key", config)
+
+
+def get_openai_model(config: Optional[VectrasConfig] = None) -> str:
+    """Get OpenAI model from configuration."""
+    return get_environment_setting("openai_model", config) or "gpt-4o-mini"
+
+
+def get_vectras_fake_openai(config: Optional[VectrasConfig] = None) -> bool:
+    """Get VECTRAS_FAKE_OPENAI setting from configuration."""
+    setting = get_environment_setting("vectras_fake_openai", config)
+    return setting == "1" if setting else False
+
+
+def get_service_port(service_name: str, config: Optional[VectrasConfig] = None) -> str:
+    """Get service port from configuration."""
+    port_setting = f"vectras_{service_name}_port"
+    return get_environment_setting(port_setting, config) or "8120"
+
+
+def get_service_host(service_name: str, config: Optional[VectrasConfig] = None) -> str:
+    """Get service host from configuration."""
+    host_setting = f"vectras_{service_name}_host"
+    return get_environment_setting(host_setting, config) or "localhost"
+
+
+def get_github_token(config: Optional[VectrasConfig] = None) -> Optional[str]:
+    """Get GitHub token from configuration."""
+    return get_environment_setting("github_token", config)
+
+
+def get_github_org(config: Optional[VectrasConfig] = None) -> Optional[str]:
+    """Get GitHub organization from configuration."""
+    return get_environment_setting("github_org", config)
+
+
+def get_github_repo(config: Optional[VectrasConfig] = None) -> Optional[str]:
+    """Get GitHub repository from configuration."""
+    return get_environment_setting("github_repo", config)

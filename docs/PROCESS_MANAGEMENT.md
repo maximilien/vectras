@@ -60,23 +60,64 @@ Tails logs and shows basic status for monitoring.
 
 ## Port Configuration
 
-Ports can be controlled via `.env`:
+Ports can be controlled via environment variables in multiple ways:
 
-- `VECTRAS_UI_PORT` (default 8120)
-- `VECTRAS_API_PORT` (default 8121)
-- `VECTRAS_MCP_PORT` (default 8122)
-- `VECTRAS_AGENT_PORT` (default 8123)
-- `VECTRAS_API_HOST` (default localhost)
-- `VECTRAS_MCP_HOST` (default localhost)
-- `VECTRAS_AGENT_HOST` (default localhost)
-- `VECTRAS_UI_HOST` (default localhost)
+**Option 1: config.yaml (Recommended)**
+```yaml
+settings:
+  environment:
+    vectras_ui_port: "${VECTRAS_UI_PORT:-8120}"
+    vectras_api_port: "${VECTRAS_API_PORT:-8121}"
+    vectras_mcp_port: "${VECTRAS_MCP_PORT:-8122}"
+    vectras_agent_port: "${VECTRAS_AGENT_PORT:-8123}"
+    vectras_ui_host: "${VECTRAS_UI_HOST:-localhost}"
+    vectras_api_host: "${VECTRAS_API_HOST:-localhost}"
+    vectras_mcp_host: "${VECTRAS_MCP_HOST:-localhost}"
+    vectras_agent_host: "${VECTRAS_AGENT_HOST:-localhost}"
+```
+
+**Option 2: .env file**
+```bash
+VECTRAS_UI_PORT=8120
+VECTRAS_API_PORT=8121
+VECTRAS_MCP_PORT=8122
+VECTRAS_AGENT_PORT=8123
+VECTRAS_UI_HOST=localhost
+VECTRAS_API_HOST=localhost
+VECTRAS_MCP_HOST=localhost
+VECTRAS_AGENT_HOST=localhost
+```
+
+**Option 3: Environment variables**
+```bash
+export VECTRAS_UI_PORT=8120
+export VECTRAS_API_PORT=8121
+# ... etc
+```
 
 ## OpenAI Configuration
 
-The agents can use OpenAI if configured:
+The agents can use OpenAI if configured through any of these methods:
 
-- `OPENAI_API_KEY` (required for real OpenAI calls)
-- `OPENAI_MODEL` (optional, default `gpt-4o-mini`)
+**Option 1: config.yaml (Recommended)**
+```yaml
+settings:
+  environment:
+    openai_api_key: "${OPENAI_API_KEY}"
+    openai_model: "${OPENAI_MODEL:-gpt-4o-mini}"
+```
+
+**Option 2: .env file**
+```bash
+OPENAI_API_KEY=your_api_key_here
+OPENAI_MODEL=gpt-4o-mini
+```
+
+**Option 3: Environment variables**
+```bash
+export OPENAI_API_KEY=your_api_key_here
+export OPENAI_MODEL=gpt-4o-mini
+```
 
 ## Status Indicators
 

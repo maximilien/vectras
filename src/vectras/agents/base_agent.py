@@ -23,7 +23,7 @@ except ImportError:
     HAS_AGENTS_SDK = False
     SQLiteSession = None
 
-from .config import get_agent_config
+from .config import get_agent_config, get_openai_api_key, get_vectras_fake_openai
 
 
 class QueryRequest(BaseModel):
@@ -91,14 +91,17 @@ class BaseAgent(ABC):
     def openai_client(self) -> AsyncOpenAI:
         """Get or create OpenAI client."""
         if self._openai_client is None:
-            if not os.getenv("OPENAI_API_KEY") and os.getenv("VECTRAS_FAKE_OPENAI", "0") != "1":
+            openai_api_key = get_openai_api_key()
+            vectras_fake_openai = get_vectras_fake_openai()
+
+            if not openai_api_key and not vectras_fake_openai:
                 raise RuntimeError(
                     "OPENAI_API_KEY is not set. Either set VECTRAS_FAKE_OPENAI=1 for tests/development "
                     "or provide a valid OpenAI API key in your environment."
                 )
 
             self._openai_client = AsyncOpenAI(
-                api_key=os.getenv("OPENAI_API_KEY"),
+                api_key=openai_api_key,
                 base_url=os.getenv("OPENAI_BASE_URL") or None,
                 organization=os.getenv("OPENAI_ORG_ID") or None,
             )
@@ -164,7 +167,7 @@ class BaseAgent(ABC):
     ) -> str:
         """Get LLM completion with optional memory."""
         # Use fake response for testing
-        if os.getenv("VECTRAS_FAKE_OPENAI", "0") == "1":
+        if get_vectras_fake_openai():
             user_message = next((msg["content"] for msg in messages if msg["role"] == "user"), "")
             system_message = next(
                 (msg["content"] for msg in messages if msg["role"] == "system"), ""
@@ -458,7 +461,7 @@ async def determine_response_type_with_llm(agent_id: str, query: str, response: 
         # For text responses, use LLM to determine if it should be markdown
         if isinstance(response, str) and len(response) > 50:
             # Check if we're in fake OpenAI mode
-            if os.getenv("VECTRAS_FAKE_OPENAI") == "1":
+            if get_vectras_fake_openai():
                 # In fake mode, just use rule-based detection
                 return rule_based_type
 
@@ -480,7 +483,7 @@ Respond with only: "markdown" or "text"
             from openai import AsyncOpenAI
 
             client = AsyncOpenAI(
-                api_key=os.getenv("OPENAI_API_KEY"),
+                api_key=get_openai_api_key(),
                 base_url=os.getenv("OPENAI_BASE_URL") or None,
             )
 

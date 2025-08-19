@@ -2,7 +2,13 @@
 
 ## Overview
 
-The Vectras Settings panel provides a comprehensive configuration viewer for the Vectras multi-agent system. It displays all settings from `config.yaml` in an organized, user-friendly interface.
+The Vectras Settings panel provides a comprehensive configuration viewer for the Vectras multi-agent system. It displays all settings from `config.yaml` in an organized, user-friendly interface. The system supports multiple configuration approaches:
+
+- **config.yaml**: Primary configuration file with environment variable substitution
+- **.env file**: Traditional environment variable file
+- **Environment variables**: Direct system environment variables
+
+Configuration priority: Environment variables > .env file > config.yaml
 
 ## Features
 
@@ -56,6 +62,7 @@ The Vectras Settings panel provides a comprehensive configuration viewer for the
 - **URL**: `/api/config`
 - **Method**: GET
 - **Response**: JSON containing `default_queries`, `settings`, and `agents` arrays
+- **Configuration Sources**: Reads from config.yaml with environment variable substitution
 
 ### Frontend Components
 - **Dual Panel System**: Separate panels for System Status and Vectras Settings
@@ -70,6 +77,29 @@ The Vectras Settings panel provides a comprehensive configuration viewer for the
   - Arrays: Formatted as lists
   - Objects: JSON-formatted with proper indentation
   - Strings: Quoted for clarity
+
+## Configuration Files
+
+### config.yaml
+The primary configuration file containing:
+- Agent configurations with system prompts and capabilities
+- Global settings and defaults
+- Environment variable references using `${VAR_NAME}` syntax
+- Memory and session management settings
+
+### config.yaml.example
+Comprehensive example file with:
+- Detailed comments explaining each setting
+- Environment variable reference section
+- Usage examples and best practices
+- Complete documentation of all available options
+
+### .env.example
+Traditional environment variable file with:
+- All available environment variables
+- Detailed comments and usage instructions
+- Quick start guide
+- Development vs production configurations
 
 ## Future Enhancements
 

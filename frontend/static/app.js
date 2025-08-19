@@ -36,13 +36,12 @@ const state = {
 // Load configuration from API
 async function loadConfiguration() {
   try {
-    const response = await fetch("/api/config");
+    // Add cache-busting parameter to ensure fresh data
+    const response = await fetch("/api/config?t=" + Date.now());
     const data = await response.json();
     state.configData = data;
     renderConfiguration();
   } catch (error) {
-    // eslint-disable-next-line no-console
-    console.error("Failed to load configuration:", error);
     // Show error state in settings
     renderConfigurationError();
   }
@@ -81,6 +80,11 @@ function renderGlobalSettings() {
   }
 
   const settingsHtml = Object.entries(settings).map(([key, value]) => {
+    // Special handling for environment configuration
+    if (key === "environment") {
+      return renderEnvironmentConfig(value);
+    }
+    
     const displayValue = formatConfigValue(value);
     return `
       <div class="config-item">
@@ -91,6 +95,96 @@ function renderGlobalSettings() {
   }).join("");
 
   container.innerHTML = settingsHtml;
+}
+
+// Render environment configuration with better formatting
+function renderEnvironmentConfig(envConfig) {
+  if (!envConfig || typeof envConfig !== "object") {
+    return `
+      <div class="config-item">
+        <span class="config-key">Environment</span>
+        <span class="config-value">No environment configuration</span>
+      </div>
+    `;
+  }
+
+  const envEntries = Object.entries(envConfig);
+  const maxVisible = 3; // Show first 3 entries
+  const hasMore = envEntries.length > maxVisible;
+  
+  const visibleEntries = envEntries.slice(0, maxVisible);
+  const hiddenEntries = envEntries.slice(maxVisible);
+
+  let html = `
+    <div class="config-item environment-config">
+      <span class="config-key">Environment (${envEntries.length} variables)</span>
+      <div class="environment-values">
+  `;
+
+  // Render visible entries
+  visibleEntries.forEach(([key, value]) => {
+    const displayValue = formatEnvironmentValue(value);
+    const tooltip = typeof value === "string" ? `title="${value}"` : "";
+    html += `
+      <div class="env-item">
+        <span class="env-key">${formatConfigKey(key)}</span>
+        <span class="env-value" ${tooltip}>${displayValue}</span>
+      </div>
+    `;
+  });
+
+  // Add scrollable container for remaining entries
+  if (hasMore) {
+    html += `
+      <div class="env-scroll-container">
+        <div class="env-scroll-header">Additional Environment Variables:</div>
+        <div class="env-scroll-content">
+    `;
+    
+    hiddenEntries.forEach(([key, value]) => {
+      const displayValue = formatEnvironmentValue(value);
+      const tooltip = typeof value === "string" ? `title="${value}"` : "";
+      html += `
+        <div class="env-item">
+          <span class="env-key">${formatConfigKey(key)}</span>
+          <span class="env-value" ${tooltip}>${displayValue}</span>
+        </div>
+      `;
+    });
+    
+    html += `
+        </div>
+      </div>
+    `;
+  }
+
+  html += `
+      </div>
+    </div>
+  `;
+
+  return html;
+}
+
+// Format environment variable values for display
+function formatEnvironmentValue(value) {
+  if (value === null || value === undefined) {
+    return "<span class=\"env-null\">Not set</span>";
+  }
+  
+  if (typeof value === "string") {
+    // Check if it's an environment variable reference
+    if (value.startsWith("${") && value.endsWith("}")) {
+      return `<span class="env-ref">${value}</span>`;
+    }
+    // Check if it's a sensitive value (API key, token, etc.)
+    if (value.toLowerCase().includes("key") || value.toLowerCase().includes("token") || value.toLowerCase().includes("secret")) {
+      return "<span class=\"env-sensitive\">••••••••</span>";
+    }
+    return `<span class="env-string">"${value}"</span>`;
+  }
+  
+  return `<span class="env-value">${value}</span>`;
 }
 
 // Render default queries section

@@ -136,6 +136,7 @@ celerybeat.pid
 
 # Environments
 .env
+!.env.example
 .envrc
 .venv
 env/
@@ -212,6 +213,7 @@ __marimo__/
 .todos-prompts.txt
 logs/
 TODOs.md
+src/vectras/vectras.code-workspace
 
 # Node.js dependencies
 node_modules/

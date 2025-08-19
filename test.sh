@@ -7,14 +7,15 @@ set +a
 
 usage() {
   cat <<USAGE
-Usage: $0 [all|unit|integration|e2e|e2e-real|e2e-simple|help] [options]
-  all           Run unit and integration tests (default)
-  unit          Run unit tests only
-  integration   Run integration tests only
-  e2e           Run comprehensive end-to-end tests (requires OpenAI API key)
-  e2e-real      Run real e2e test that creates actual PR (requires OpenAI API key)
-  e2e-simple    Run simple e2e test that focuses on core capabilities (requires OpenAI API key)
-  help          Show this help
+Usage: $0 [all|unit|integration|integration-fast|e2e|e2e-real|e2e-simple|help] [options]
+  all             Run unit and integration tests (default)
+  unit            Run unit tests only
+  integration     Run integration tests only
+  integration-fast Run fast integration tests only (no OpenAI API key required)
+  e2e             Run comprehensive end-to-end tests (requires OpenAI API key)
+  e2e-real        Run real e2e test that creates actual PR (requires OpenAI API key)
+  e2e-simple      Run simple e2e test that focuses on core capabilities (requires OpenAI API key)
+  help            Show this help
 
 Options for e2e:
   -v, --verbose Show detailed step-by-step output
@@ -54,6 +55,10 @@ case "$target" in
   integration)
     echo "🧪 Running integration tests..."
     env -u VIRTUAL_ENV uv run pytest -q tests/integration -k test_components_end_to_end
+    ;;
+  integration-fast)
+    echo "🧪 Running fast integration tests (no OpenAI API key required)..."
+    env -u VIRTUAL_ENV uv run pytest -q tests/integration/test_system.py
     ;;
   e2e)
     echo "🚀 Running comprehensive end-to-end tests..."

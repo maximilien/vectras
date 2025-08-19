@@ -5,10 +5,20 @@ A multi-agent AI system for automated code testing, error detection, and fix gen
 ## 🚀 Quickstart
 
 1. **Setup Environment:**
+   
+   **Option A: Using config.yaml (Recommended)**
+   ```bash
+   cp config.yaml.example config.yaml
+   # Edit config.yaml and set your environment variables
+   ```
+   
+   **Option B: Using .env file (Traditional)**
    ```bash
    cp .env.example .env
-   # Set OPENAI_API_KEY for real AI responses
+   # Edit .env and set your environment variables
    ```
+   
+   **Required for production:** Set `OPENAI_API_KEY` for real AI responses
 
 2. **Start All Agents:**
    ```bash
@@ -29,6 +39,7 @@ A multi-agent AI system for automated code testing, error detection, and fix gen
    # Run specific test types
    ./test.sh unit          # Unit tests only
    ./test.sh integration   # Integration tests only
+   ./test.sh integration-fast # Fast integration tests (no OpenAI API key required)
    ./test.sh e2e           # Comprehensive e2e tests (requires OpenAI API key)
    ./test.sh e2e -v        # E2e tests with verbose output
    
@@ -152,22 +163,56 @@ pytest tests/unit/test_api.py
 
 ## 🔧 Configuration
 
-### **Environment Variables**
+Vectras supports two configuration approaches:
+
+### **Option 1: config.yaml (Recommended)**
+All environment variables are configured in `config.yaml` under the `environment` section:
+
 ```bash
 # Required for real AI responses
-OPENAI_API_KEY=your_api_key_here
+export OPENAI_API_KEY=your_api_key_here
 
 # Optional OpenAI settings
-OPENAI_MODEL=gpt-4o-mini
-OPENAI_BASE_URL=https://api.openai.com/v1
-OPENAI_ORG_ID=your_org_id
+export OPENAI_MODEL=gpt-4o-mini
+export OPENAI_BASE_URL=https://api.openai.com/v1
+export OPENAI_ORG_ID=your_org_id
 
 # For development/testing without OpenAI
-VECTRAS_FAKE_OPENAI=1
+export VECTRAS_FAKE_OPENAI=1
 
 # GitHub integration
-GITHUB_TOKEN=your_github_token
+export GITHUB_TOKEN=your_github_token
+export GITHUB_ORG=your_organization
+export GITHUB_REPO=your_repository
+
+# Service configuration (optional)
+export VECTRAS_UI_PORT=8120
+export VECTRAS_API_PORT=8121
+export VECTRAS_MCP_PORT=8122
+export VECTRAS_AGENT_PORT=8123
 ```
+
+See `config.yaml.example` for a complete list of all available environment variables and their descriptions.
+
+### **Option 2: .env file (Traditional)**
+Use a traditional `.env` file for environment variables:
+
+```bash
+# Copy the example file
+cp .env.example .env
+
+# Edit .env and set your variables
+OPENAI_API_KEY=your_api_key_here
+GITHUB_TOKEN=your_github_token
+# ... other variables
+```
+
+See `.env.example` for a complete list of all available environment variables and their descriptions.
+
+### **Configuration Priority**
+1. Environment variables (highest priority)
+2. `.env` file
+3. `config.yaml` environment section (lowest priority)
 
 ### **Agent Configuration**
 Each agent is configured in `config.yaml` with:
@@ -232,6 +277,7 @@ vectras/
 # Run tests
 ./test.sh          # All tests
 ./test.sh unit     # Unit tests only
+./test.sh integration-fast # Fast integration tests (no API key required)
 ./test.sh e2e      # E2E tests (requires OpenAI API key)
 ./test.sh e2e -v   # E2E tests with verbose output
 

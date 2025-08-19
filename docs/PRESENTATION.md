@@ -16,8 +16,8 @@ For HTML with speaker notes:
 npx @marp-team/marp-cli@latest PRESENTATION.md --html --allow-local-files -o ~/Desktop/vectras.html
 -->
 
-# Vectras: Multi-Agent AI System
-## Automated Code Testing & Error Detection
+# Vectras: Multi-Agent AI System for Automated Code Testing & Error Detection
+## A Comprehensive Overview
 
 **Maximilien.ai** 
 
@@ -76,19 +76,20 @@ A **multi-agent AI system** that automates:
 
 **Configurable via `config.yaml`** for custom default queries.
 
+---
+
 ## 🖼️ New Frontend Interface
 
 ### Modern Three-Pane Layout
 
 <div style="display: flex; justify-content: center; margin: 20px 0;">
-  <img src="../images/ragme1.png" alt="RAGme.ai Interface - Main Chat" style="width: 80%; height: auto; border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.15);">
+  <img src="../images/vectras1.png" alt="Vectras.ai Interface - Main Chat" style="width: 80%; height: auto; border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.15);">
 </div>
 
 **Key Features:**
 - **Left Sidebar**: Chat history with collapsible design
 - **Center**: Main chat area with markdown support
-- **Right Sidebar**: Document management with D3.js visualizations
-- **Real-time Updates**: WebSocket communication for live interactions
+- **Right Sidebar**: List of agents and selected agent to chat with
 
 ---
 
@@ -97,7 +98,7 @@ A **multi-agent AI system** that automates:
 ### Interactive Agent Dashboard
 
 <div style="display: flex; justify-content: center; margin: 20px 0;">
-  <img src="../images/vectras1.png" alt="Vectras.ai Interface - Agents  Management" style="width: 80%; height: auto; border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.15);">
+  <img src="../images/vectras2.png" alt="Vectras.ai Interface - Agents  Management" style="width: 80%; height: auto; border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.15);">
 </div>
 
 **Advanced Features:**
@@ -113,7 +114,7 @@ A **multi-agent AI system** that automates:
 ### See Current System Configuration
 
 <div style="display: flex; justify-content: center; margin: 20px 0;">
-  <img src="../images/vectras2.png" alt="Vectras.ai Interface - System Configuration" style="width: 80%; height: auto; border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.15);">
+  <img src="../images/vectras3.png" alt="Vectras.ai Interface - System Configuration" style="width: 80%; height: auto; border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.15);">
 </div>
 
 **Advanced Features:**

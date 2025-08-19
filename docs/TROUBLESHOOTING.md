@@ -16,11 +16,15 @@
 ## OpenAI Configuration
 
 - **OpenAI errors**: Set `VECTRAS_FAKE_OPENAI=1` to bypass or set `OPENAI_API_KEY` and optionally `OPENAI_MODEL` (default `gpt-4o-mini`)
-- **API key issues**: Ensure `OPENAI_API_KEY` is properly set in `.env` file
+- **API key issues**: Ensure `OPENAI_API_KEY` is properly set in your configuration:
+  - **Option 1**: Set in `config.yaml` under `settings.environment.openai_api_key`
+  - **Option 2**: Set in `.env` file as `OPENAI_API_KEY=your_key`
+  - **Option 3**: Set as environment variable: `export OPENAI_API_KEY=your_key`
 
 ## Testing
 
 - **Run tests**: `./test.sh` for all tests
+- **Fast tests**: `./test.sh integration-fast` for quick integration tests (no API key required)
 - **Integration hangs**: Ensure uvicorn is available and ports are free
 - **E2E tests**: Require OpenAI API key to be set
 

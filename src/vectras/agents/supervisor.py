@@ -21,6 +21,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 
 from .base_agent import determine_response_type_with_llm
+from .config import get_openai_model, load_config
 
 
 class SupervisorManager:
@@ -30,13 +31,28 @@ class SupervisorManager:
         self.project_root = Path(".")
         self.user_settings_path = self.project_root / "config" / "user_settings.yaml"
         self.user_settings_path.parent.mkdir(parents=True, exist_ok=True)
-        self.agent_endpoints = {
-            "github": "http://127.0.0.1:8129",
-            "testing": "http://127.0.0.1:8126",
-            "linting": "http://127.0.0.1:8127",
-            "coding": "http://127.0.0.1:8125",
-            "logging-monitor": "http://127.0.0.1:8124",
-        }
+
+        # Load configuration to get agent ports dynamically
+        config = load_config()
+        self.agent_endpoints = {}
+
+        # Build agent endpoints from configuration
+        for agent in config.agents:
+            if agent.port:
+                # Use localhost for now since we're running locally
+                host = "127.0.0.1"
+                port = agent.port
+                self.agent_endpoints[agent.id] = f"http://{host}:{port}"
+
+        # Fallback to hardcoded values if configuration loading fails
+        if not self.agent_endpoints:
+            self.agent_endpoints = {
+                "github": "http://127.0.0.1:8128",
+                "testing": "http://127.0.0.1:8126",
+                "linting": "http://127.0.0.1:8127",
+                "coding": "http://127.0.0.1:8125",
+                "logging-monitor": "http://127.0.0.1:8124",
+            }
 
     async def get_project_files(self, pattern: str = "*", limit: int = 100) -> str:
         """Get list of project files matching pattern."""
@@ -128,7 +144,7 @@ class SupervisorManager:
 
             # Add some defaults
             defaults = {
-                "openai_model": os.getenv("OPENAI_MODEL", "gpt-4o-mini"),
+                "openai_model": get_openai_model(),
                 "project_name": self.project_root.name,
                 "last_activity": None,
             }

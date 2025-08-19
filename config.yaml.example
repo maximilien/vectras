@@ -1,20 +1,28 @@
-# Vectras Agents Configuration
-# This file defines the available agents and their configurations
+# Vectras Agents Configuration Example
+# Copy this file to config.yaml and customize for your environment
+# 
+# This file defines the available agents and their configurations for the Vectras
+# multi-agent AI system. All environment variables are centralized in the
+# environment section at the bottom.
 
 # Default queries for recent messages feature
+# These are suggested queries that users can quickly access
 default_queries:
   - "status"
   - "latest actions"
   - "up time"
 
+# Agent configurations
+# Each agent is a specialized AI service with specific capabilities
 agents:
+  # Supervisor Agent - Main coordinator for all other agents
   - id: "supervisor"
     name: "Supervisor Agent"
     description: "Main supervisor agent that manages user settings, tracks project location, and coordinates with other agents"
     enabled: true
-    model: "gpt-4o-mini"
-    temperature: 0.2
-    max_tokens: 2000
+    model: "gpt-4o-mini"  # OpenAI model to use for this agent
+    temperature: 0.2      # Creativity level (0.0 = deterministic, 1.0 = very creative)
+    max_tokens: 2000      # Maximum response length
     system_prompt: "You are the Vectras supervisor agent. You manage user settings, API keys, project locations, and coordinate with other agents. You can monitor the health of Vectras services and handoff tasks to specialized agents."
     capabilities:
       - "User Settings Management"
@@ -22,8 +30,8 @@ agents:
       - "Agent Coordination"
       - "Health Monitoring"
       - "System Status"
-    endpoint: "/query"
-    port: 8123
+    endpoint: "/query"    # API endpoint for this agent
+    port: 8123           # Port this agent runs on
     tags:
       - "supervisor"
       - "coordinator"
@@ -31,13 +39,14 @@ agents:
       enabled: true
       type: "sqlite"
       database_path: "./data/supervisor_memory.db"
-      session_ttl: 3600
+      session_ttl: 3600  # Session timeout in seconds
       max_conversations: 100
     settings:
       project_root: "./."
       user_settings_file: "./config/user_settings.yaml"
       handoff_timeout: 30
 
+  # Logging Monitor Agent - Monitors application logs for errors
   - id: "logging-monitor"
     name: "Logging Monitor Agent"
     description: "Monitors application logs for errors, stack traces, and notifications to other agents"
@@ -64,7 +73,7 @@ agents:
       max_conversations: 50
     settings:
       log_directory: "./logs"
-      monitor_interval: 5
+      monitor_interval: 5  # Check logs every 5 seconds
       error_patterns:
         - "ERROR"
         - "Exception"
@@ -73,6 +82,7 @@ agents:
         - "CRITICAL"
       max_log_size: "10MB"
 
+  # Coding Agent - Analyzes and fixes code issues
   - id: "coding"
     name: "Coding Agent"
     description: "Analyzes errors and code issues, suggests fixes, and creates GitHub branches and PRs"
@@ -100,7 +110,7 @@ agents:
       session_ttl: 7200
       max_conversations: 75
     settings:
-      github_enabled: false
+      github_enabled: false  # Set to true to enable GitHub integration
       branch_prefix: "vectras-fix"
       pr_labels:
         - "automated-fix"
@@ -108,6 +118,7 @@ agents:
       linting_agent_port: 8127
       auto_lint_fixes: true
 
+  # Linting Agent - Ensures code quality and formatting
   - id: "linting"
     name: "Linting Agent"
     description: "Runs linters on code changes, applies auto-fixes, and ensures code quality standards"
@@ -155,6 +166,7 @@ agents:
         - "**/__pycache__/**"
         - "**/.venv/**"
 
+  # Testing Agent - Creates test tools and integration tests
   - id: "testing"
     name: "Testing Agent"
     description: "Creates test tools, generates integration tests, and can introduce controlled bugs for other agents to detect and fix"
@@ -188,6 +200,7 @@ agents:
       integration_test_path: "./tests/integration"
       enable_bug_injection: true
 
+  # GitHub Agent - Manages version control operations
   - id: "github"
     name: "GitHub Agent"
     description: "Handles GitHub operations including branch creation, commits, and pull request management"
@@ -215,16 +228,15 @@ agents:
       session_ttl: 3600
       max_conversations: 50
     settings:
-      github_token: "${GITHUB_TOKEN}"
-      github_org: "${GITHUB_ORG}"
-      github_repo: "${GITHUB_REPO}"
+      # GitHub settings use environment variables from the environment section below
       github_branch: "main"
       github_branch_prefix: "vectras-"
       github_pr_template: "PR created by Vectras GitHub Agent"
       github_auto_merge: false
 
-# Global settings
+# Global settings applied to all agents
 settings:
+  # Default model settings for agents that don't specify their own
   default_model: "gpt-4o-mini"
   default_temperature: 0.2
   default_max_tokens: 1000
@@ -232,28 +244,59 @@ settings:
   enable_logging: true
   
   # Environment configuration
+  # All environment variables are centralized here for easy management
   environment:
     # OpenAI Configuration
+    # Required for real AI responses. Set VECTRAS_FAKE_OPENAI=1 for testing without API key
     openai_api_key: "${OPENAI_API_KEY}"
     openai_model: "${OPENAI_MODEL:-gpt-4o-mini}"
     vectras_fake_openai: "${VECTRAS_FAKE_OPENAI:-0}"
     
     # Service Ports
+    # Configure which ports each service runs on
     vectras_ui_port: "${VECTRAS_UI_PORT:-8120}"
     vectras_api_port: "${VECTRAS_API_PORT:-8121}"
     vectras_mcp_port: "${VECTRAS_MCP_PORT:-8122}"
     vectras_agent_port: "${VECTRAS_AGENT_PORT:-8123}"
     
     # Service Hosts
+    # Configure which hosts each service binds to
     vectras_ui_host: "${VECTRAS_UI_HOST:-localhost}"
     vectras_api_host: "${VECTRAS_API_HOST:-localhost}"
     vectras_mcp_host: "${VECTRAS_MCP_HOST:-localhost}"
     vectras_agent_host: "${VECTRAS_AGENT_HOST:-localhost}"
     
     # GitHub Configuration
+    # Required for GitHub integration features
     github_token: "${GITHUB_TOKEN}"
     github_org: "${GITHUB_ORG}"
     github_repo: "${GITHUB_REPO}"
     
     # Development/Testing
+    # Python path for development environments
     pythonpath: "${PYTHONPATH}"
+
+# Environment Variables Reference:
+#
+# Required for production:
+# - OPENAI_API_KEY: Your OpenAI API key for real AI responses
+#
+# Optional for production:
+# - OPENAI_MODEL: OpenAI model to use (default: gpt-4o-mini)
+# - GITHUB_TOKEN: GitHub personal access token for repository operations
+# - GITHUB_ORG: GitHub organization name
+# - GITHUB_REPO: GitHub repository name
+#
+# For development/testing:
+# - VECTRAS_FAKE_OPENAI: Set to "1" to use fake responses (no API key needed)
+# - PYTHONPATH: Python path for development environments
+#
+# Service configuration (optional):
+# - VECTRAS_UI_PORT: UI service port (default: 8120)
+# - VECTRAS_API_PORT: API service port (default: 8121)
+# - VECTRAS_MCP_PORT: MCP service port (default: 8122)
+# - VECTRAS_AGENT_PORT: Agent service port (default: 8123)
+# - VECTRAS_UI_HOST: UI service host (default: localhost)
+# - VECTRAS_API_HOST: API service host (default: localhost)
+# - VECTRAS_MCP_HOST: MCP service host (default: localhost)
+# - VECTRAS_AGENT_HOST: Agent service host (default: localhost)

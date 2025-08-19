@@ -407,6 +407,34 @@ async def analyze_error(error_content: str, file_path: Optional[str] = None) -> 
 
 
 @tool
+async def fix_file(file_path: str) -> str:
+    """Analyze and fix issues in a file automatically."""
+    try:
+        # First analyze the file to identify issues
+        analysis_result = await code_fixer_manager.analyze_code(file_path)
+
+        # Extract issues from the analysis
+        if "division by zero" in analysis_result.lower():
+            fix_result = await code_fixer_manager.fix_code(file_path, "Fix division by zero error")
+        elif "import" in analysis_result.lower() and "missing" in analysis_result.lower():
+            fix_result = await code_fixer_manager.fix_code(file_path, "Add missing imports")
+        elif "print" in analysis_result.lower() and "logging" in analysis_result.lower():
+            fix_result = await code_fixer_manager.fix_code(
+                file_path, "Replace print statements with logging"
+            )
+        else:
+            # Try a general fix
+            fix_result = await code_fixer_manager.fix_code(
+                file_path, "Fix any issues found in the file"
+            )
+
+        return f"✅ File analysis and fix completed:\n\n**Analysis:**\n{analysis_result}\n\n**Fix Result:**\n{fix_result}"
+
+    except Exception as e:
+        return f"❌ Error analyzing and fixing file: {str(e)}"
+
+
+@tool
 async def fix_code(file_path: str, fix_description: str) -> str:
     """Apply a fix to a file."""
     return await code_fixer_manager.fix_code(file_path, fix_description)
@@ -448,7 +476,8 @@ When users want to fix code, apply the appropriate fixes and report the results.
 You can use the following tools to perform code analysis and fixing operations:
 - analyze_code: Analyze a file for potential issues
 - analyze_error: Analyze an error message and suggest fixes
-- fix_code: Apply a fix to a file
+- fix_code: Apply a fix to a file (requires file path and fix description)
+- fix_file: Analyze and fix issues in a file automatically (requires only file path)
 - fix_sample_tool: Fix a sample tool for demonstration
 - get_code_fixer_status: Get comprehensive coding agent status
 - get_recent_analyses: Get recent code analyses
@@ -465,6 +494,7 @@ Format your responses in markdown for better readability.""",
         analyze_code,
         analyze_error,
         fix_code,
+        fix_file,
         fix_sample_tool,
         get_code_fixer_status,
         get_recent_analyses,

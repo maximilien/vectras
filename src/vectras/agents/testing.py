@@ -266,48 +266,102 @@ if __name__ == "__main__":
             return f"❌ Tool '{tool_name}' not found."
 
         try:
-            # Create a generic test
+            # Create a simple test that executes in the current process
             test_code = f"""
 import sys
-sys.path.append('{self.test_tools_directory}')
+import os
+import tempfile
+
+# Create a temporary file with the tool code
+tool_code = '''{tool.code}'''
+
+# Write to a temporary file
+with tempfile.NamedTemporaryFile(mode='w', suffix='.py', delete=False) as f:
+    f.write(tool_code)
+    temp_file = f.name
 
 try:
-    from {tool_name} import *
-    print(f"✅ Tool '{tool_name}' imported successfully")
+    # Execute the code in a controlled way
+    exec(tool_code)
     
-    # Try to find and test functions
-    functions = [name for name in dir() if callable(globals()[name]) and not name.startswith('_')]
+    print(f"✅ Tool '{tool_name}' code executed successfully")
+    
+    # Test specific functions if they exist
+    local_vars = {{}}
+    exec(tool_code, globals(), local_vars)
+    
+    # Find functions in the executed code
+    functions = [name for name, obj in local_vars.items() 
+                if callable(obj) and not name.startswith('_')]
+    
     print(f"Found functions: {{functions}}")
     
-    # Test each function with sample inputs if possible
-    for func_name in functions[:3]:  # Test first 3 functions
+    # Test each function
+    for func_name in functions:
         try:
-            func = globals()[func_name]
-            if func_name in ['add', 'subtract', 'multiply', 'divide']:
+            func = local_vars[func_name]
+            
+            if func_name == 'divide':
+                # Test with valid inputs
+                try:
+                    result = func(10, 2)
+                    print(f"✅ {{func_name}}(10, 2) = {{result}}")
+                except Exception as e:
+                    print(f"❌ {{func_name}}(10, 2) failed: {{e}}")
+                    
+                # Test with zero division
+                try:
+                    result = func(10, 0)
+                    print(f"❌ {{func_name}}(10, 0) should have failed but returned: {{result}}")
+                except ZeroDivisionError:
+                    print(f"✅ {{func_name}}(10, 0) correctly raised ZeroDivisionError")
+                except Exception as e:
+                    print(f"⚠️ {{func_name}}(10, 0) raised unexpected error: {{e}}")
+                    
+            elif func_name in ['add', 'subtract', 'multiply']:
                 result = func(10, 2)
                 print(f"✅ {{func_name}}(10, 2) = {{result}}")
             else:
                 print(f"⚠️ {{func_name}}: No test inputs defined")
+                
         except Exception as e:
             print(f"❌ {{func_name}} test failed: {{e}}")
     
-    print(f"✅ Tool '{tool_name}' tests completed")
+    print(f"✅ Tool '{tool_name}' tests completed successfully")
     
-except Exception as e:
-    print(f"❌ Tool '{tool_name}' test failed: {{e}}")
+finally:
+    # Clean up
+    try:
+        os.unlink(temp_file)
+    except:
+        pass
 """
 
-            test_file = self.test_tools_directory / f"test_{tool_name}.py"
-            test_file.write_text(test_code)
+            # Execute the test code directly in the current process
+            result = {"returncode": 0, "stdout": "", "stderr": ""}
 
-            result = subprocess.run(
-                [sys.executable, str(test_file)], capture_output=True, text=True, timeout=30
-            )
+            try:
+                # Capture stdout/stderr
+                import io
+                from contextlib import redirect_stderr, redirect_stdout
 
-            if result.returncode == 0:
-                return f"✅ Tests for '{tool_name}' completed:\n```\n{result.stdout}\n```"
+                stdout_capture = io.StringIO()
+                stderr_capture = io.StringIO()
+
+                with redirect_stdout(stdout_capture), redirect_stderr(stderr_capture):
+                    exec(test_code)
+
+                result["stdout"] = stdout_capture.getvalue()
+                result["stderr"] = stderr_capture.getvalue()
+
+            except Exception as e:
+                result["returncode"] = 1
+                result["stderr"] = str(e)
+
+            if result["returncode"] == 0:
+                return f"✅ Tests for '{tool_name}' completed successfully:\n```\n{result['stdout']}\n```"
             else:
-                return f"❌ Tests for '{tool_name}' failed:\n```\n{result.stderr}\n```"
+                return f"❌ Tests for '{tool_name}' failed:\n```\n{result['stderr']}\n```"
 
         except Exception as e:
             return f"❌ Error running tests for '{tool_name}': {str(e)}"
