@@ -39,6 +39,98 @@ const state = {
 let recognition = null;
 let isRecording = false;
 
+// Initialize speech recognition
+function initSpeechRecognition() {
+  const micBtn = $("#mic-btn");
+  if ("webkitSpeechRecognition" in window || "SpeechRecognition" in window) {
+    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+    recognition = new SpeechRecognition();
+    recognition.continuous = false;
+    recognition.interimResults = false;
+    recognition.lang = "en-US";
+
+    recognition.onstart = () => {
+      isRecording = true;
+      micBtn.classList.add("recording");
+      micBtn.textContent = "🔴";
+      micBtn.title = "Recording... Click to stop";
+    };
+
+    recognition.onresult = (event) => {
+      const transcript = event.results[0][0].transcript;
+      const input = $("#input");
+      input.value = transcript;
+      input.focus();
+    };
+
+    recognition.onerror = (event) => {
+      switch(event.error) {
+      case "no-speech":
+        // No speech detected
+        break;
+      case "audio-capture":
+        // Microphone access denied
+        break;
+      case "not-allowed":
+        // Microphone access denied
+        break;
+      case "network":
+        // Network error
+        break;
+      default:
+        // Other error
+        break;
+      }
+      stopRecording();
+    };
+
+    recognition.onend = () => {
+      stopRecording();
+    };
+  } else {
+    if (micBtn) {
+      micBtn.style.display = "none";
+    }
+  }
+  
+  // Add visual feedback for microphone availability
+  if (micBtn) {
+    micBtn.addEventListener("mouseenter", () => {
+      if (!recognition) {
+        micBtn.title = "Voice input not available in this browser";
+      }
+    });
+  }
+}
+
+function stopRecording() {
+  const micBtn = $("#mic-btn");
+  isRecording = false;
+  micBtn.classList.remove("recording");
+  micBtn.textContent = "🎤";
+  micBtn.title = "Voice input (Ctrl+Shift+M)";
+  if (recognition) {
+    recognition.stop();
+  }
+}
+
+function toggleRecording() {
+  if (!recognition) {
+    alert("Voice input is not supported in this browser. Please use a modern browser like Chrome, Firefox, or Safari.");
+    return;
+  }
+  
+  if (isRecording) {
+    stopRecording();
+  } else {
+    try {
+      recognition.start();
+    } catch (error) {
+      alert("Error starting voice input. Please check microphone permissions.");
+    }
+  }
+}
+
 // Load configuration from API
 async function loadConfiguration() {
   try {
@@ -1306,108 +1398,11 @@ function bindEvents() {
   // Microphone functionality for voice-to-text input
   // Uses the Web Speech API for browser-based speech recognition
   // Supports keyboard shortcut Ctrl+Shift+M (or Cmd+Shift+M on Mac)
-  const micBtn = $("#mic-btn");
 
   // Initialize speech recognition
-  function initSpeechRecognition() {
-    console.log('Initializing speech recognition...');
-    if ('webkitSpeechRecognition' in window || 'SpeechRecognition' in window) {
-      const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
-      recognition = new SpeechRecognition();
-      recognition.continuous = false;
-      recognition.interimResults = false;
-      recognition.lang = 'en-US';
-      console.log('Speech recognition initialized successfully');
+  initSpeechRecognition();
 
-      recognition.onstart = () => {
-        isRecording = true;
-        micBtn.classList.add('recording');
-        micBtn.textContent = '🔴';
-        micBtn.title = 'Recording... Click to stop';
-        console.log('Voice recording started');
-      };
 
-      recognition.onresult = (event) => {
-        const transcript = event.results[0][0].transcript;
-        const input = $("#input");
-        input.value = transcript;
-        input.focus();
-        
-        // Show a brief success message
-        console.log('Voice input received:', transcript);
-      };
-
-      recognition.onerror = (event) => {
-        console.error('Speech recognition error:', event.error);
-        let errorMessage = 'Voice input error';
-        switch(event.error) {
-          case 'no-speech':
-            errorMessage = 'No speech detected. Please try again.';
-            break;
-          case 'audio-capture':
-            errorMessage = 'Microphone access denied. Please check permissions.';
-            break;
-          case 'not-allowed':
-            errorMessage = 'Microphone access denied. Please allow microphone access.';
-            break;
-          case 'network':
-            errorMessage = 'Network error. Please check your connection.';
-            break;
-          default:
-            errorMessage = `Voice input error: ${event.error}`;
-        }
-        console.error(errorMessage);
-        stopRecording();
-      };
-
-      recognition.onend = () => {
-        stopRecording();
-      };
-    } else {
-      console.warn('Speech recognition not supported in this browser');
-      if (micBtn) {
-        micBtn.style.display = 'none';
-      }
-    }
-    
-    // Add visual feedback for microphone availability
-    if (micBtn) {
-      micBtn.addEventListener('mouseenter', () => {
-        if (!recognition) {
-          micBtn.title = 'Voice input not available in this browser';
-        }
-      });
-    }
-  }
-
-  function stopRecording() {
-    isRecording = false;
-    micBtn.classList.remove('recording');
-    micBtn.textContent = '🎤';
-    micBtn.title = 'Voice input (Ctrl+Shift+M)';
-    if (recognition) {
-      recognition.stop();
-    }
-  }
-
-  function toggleRecording() {
-    if (!recognition) {
-      console.warn('Speech recognition not available');
-      alert('Voice input is not supported in this browser. Please use a modern browser like Chrome, Firefox, or Safari.');
-      return;
-    }
-    
-    if (isRecording) {
-      stopRecording();
-    } else {
-      try {
-        recognition.start();
-      } catch (error) {
-        console.error('Error starting speech recognition:', error);
-        alert('Error starting voice input. Please check microphone permissions.');
-      }
-    }
-  }
 
   if (recentBtn) {
     recentBtn.addEventListener("click", (e) => {
@@ -1417,16 +1412,12 @@ function bindEvents() {
   }
 
   // Microphone button event listener
-  console.log('Setting up microphone button event listener, micBtn:', micBtn);
+  const micBtn = $("#mic-btn");
   if (micBtn) {
-    console.log('Microphone button found, adding event listener');
     micBtn.addEventListener("click", (e) => {
       e.stopPropagation();
-      console.log('Microphone button clicked');
       toggleRecording();
     });
-  } else {
-    console.error('Microphone button not found');
   }
 
   if (recentClose) {
@@ -1459,7 +1450,7 @@ function bindEvents() {
     }
     
     // Microphone keyboard shortcut (Ctrl/Cmd + Shift + M)
-    if ((e.ctrlKey || e.metaKey) && e.shiftKey && e.key === 'M') {
+    if ((e.ctrlKey || e.metaKey) && e.shiftKey && e.key === "M") {
       e.preventDefault();
       if (micBtn && recognition) {
         toggleRecording();
