@@ -42,7 +42,6 @@ let isRecording = false;
 // Initialize speech recognition
 function initSpeechRecognition() {
   const micBtn = $("#mic-btn");
-  console.log("Initializing speech recognition, micBtn found:", !!micBtn);
   if ("webkitSpeechRecognition" in window || "SpeechRecognition" in window) {
     const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
     recognition = new SpeechRecognition();
@@ -116,7 +115,6 @@ function stopRecording() {
 }
 
 function toggleRecording() {
-  console.log("toggleRecording called, recognition available:", !!recognition);
   if (!recognition) {
     alert("Voice input is not supported in this browser. Please use a modern browser like Chrome, Firefox, or Safari.");
     return;
@@ -1420,10 +1418,6 @@ function bindEvents() {
       e.stopPropagation();
       toggleRecording();
     });
-    // Add a visual indicator that the button is working
-    micBtn.style.border = "2px solid #10b981";
-  } else {
-    console.error("Microphone button not found!");
   }
 
   if (recentClose) {
