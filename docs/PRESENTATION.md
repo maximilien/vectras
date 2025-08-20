@@ -70,6 +70,7 @@ A **multi-agent AI system** that automates:
 **Key Features:**
 - **Collapsible Panes**: Maximize chat space
 - **Recent Messages**: Quick access to conversation history
+- **Voice Input**: Microphone button for voice-to-text input (Ctrl+Shift+M)
 - **Visual Indicators**: Agent icons and typing animations
 - **Smart Scrolling**: Remembers position per conversation
 - **Real-time Status**: Live agent health monitoring

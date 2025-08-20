@@ -113,6 +113,7 @@ Vectras consists of 5 specialized AI agents working together:
 ### **Modern UI/UX**
 - **Collapsible Panes**: Agent card, chat list, and agent list can be collapsed for more space
 - **Recent Messages**: Quick access to last 5 messages and common queries per agent
+- **Voice Input**: Built-in microphone button for voice-to-text input with keyboard shortcut (Ctrl+Shift+M)
 - **Visual Indicators**: Agent icons, typing indicators, and status badges
 - **Smart Scrolling**: Remembers scroll position per conversation
 - **Responsive Design**: Smooth animations and modern styling
@@ -257,7 +258,7 @@ vectras/
 - **Code Quality**: Performs linting and suggests improvements with detailed reports
 - **Version Control**: Automated branch and PR creation
 - **End-to-End Testing**: Comprehensive integration test suite
-- **Modern Frontend**: Responsive UI with real-time agent status monitoring
+- **Modern Frontend**: Responsive UI with real-time agent status monitoring and voice input support
 
 ## 🚀 Development
 

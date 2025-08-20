@@ -28,6 +28,14 @@
 - **Integration hangs**: Ensure uvicorn is available and ports are free
 - **E2E tests**: Require OpenAI API key to be set
 
+## Voice Input Issues
+
+- **Microphone not working**: Ensure browser supports Web Speech API (Chrome, Firefox, Safari)
+- **Permission denied**: Allow microphone access when prompted by the browser
+- **Button not responding**: Check browser console for JavaScript errors
+- **Speech recognition errors**: Try refreshing the page or restarting the browser
+- **Keyboard shortcut**: Use Ctrl+Shift+M (or Cmd+Shift+M on Mac) as alternative to clicking the microphone button
+
 ## Status Indicators
 
 The scripts use emojis to help identify issues:
