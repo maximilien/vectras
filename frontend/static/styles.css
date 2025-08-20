@@ -248,7 +248,7 @@ main {
   padding: 10px 14px;
   border-radius: 8px;
   border: 1px solid var(--ring);
-  background: var(--bg) !important;
+  background: rgba(255, 255, 255, 0.05) !important;
   color: var(--muted) !important;
   font-weight: 600;
   cursor: pointer;
@@ -256,7 +256,8 @@ main {
   transition: background-color 0.2s ease, color 0.2s ease;
 }
 
-.recent-btn:hover {
+.recent-btn:hover,
+.recent-btn:focus {
   background: var(--accent) !important;
   color: #0b1220 !important;
 }
