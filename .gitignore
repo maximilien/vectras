@@ -213,7 +213,7 @@ __marimo__/
 .todos-prompts.txt
 logs/
 TODOs.md
-src/vectras/vectras.code-workspace
+vectras-ai.code-workspace
 
 # Node.js dependencies
 node_modules/
